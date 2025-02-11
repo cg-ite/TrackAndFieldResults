@@ -2,10 +2,10 @@
 Dies ist eine Bibliothek für das Abfragen von Leichtathletik Wettkampf Ergebnissen mit C#. In der Leichtathletik gibt es mehrere Zeitmessunternehmen, die die Ergebnisse im Internet zum Teil live veröffentlichen. Mit dieser Bibliothek soll der Zugriff auf die Ergebnisse vereinfacht werden.
 
 Geplant sind folgende Anbieter zu unterstützen:
-[x] Omega
-[] Seltec
-[] Athos
-[] Worldathletics
+- [x] Omega
+- [] Seltec
+- [] Athos
+- [] Worldathletics
 
 Bei den ersten drei Anbietern handelt es sich um Wettkampf-Ergebnis Dienste bei denen die Daten Wettkampf zentriert abgefragt werden können:
 - Liste der bzw. Suche nach Wettkämpfe
