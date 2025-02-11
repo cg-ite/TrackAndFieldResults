@@ -1,0 +1,15 @@
+{
+  "uid": 1,
+  "hash": "1234PYtLEGDQ512fr5pAriv6CchvLnuhe0nE2yVtlEk=",
+  "content": {
+    "full": {
+      "SeasonId": "2020_0",
+      "EventId": "EVENTID",
+      "EventName": "Event Name",
+      "Header1": "Test Event",
+      "Header2": "Stadion",
+      "Header3": "1 Januar 2019",
+      "Theme": "THEME"
+    }
+  }
+}
