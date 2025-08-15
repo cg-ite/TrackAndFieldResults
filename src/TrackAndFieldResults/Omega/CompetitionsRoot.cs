@@ -11,7 +11,7 @@ namespace TrackAndFieldResults.Omega
     /// Einstiegspunkt für die Abfrage aller vorhandenen
     /// Wettkämpfe
     /// </summary>
-    public class CompetitionsRoot
+    public partial class CompetitionsRoot
     {
         [JsonPropertyName("uid")]
         public int Uid { get; set; }
@@ -23,13 +23,13 @@ namespace TrackAndFieldResults.Omega
         public CompetitionsContent Content { get; set; }
     }
 
-    public class CompetitionsContent
+    public partial class CompetitionsContent
     {
         [JsonPropertyName("full")]
         public CompetitionsDetails Full { get; set; }
     }
 
-    public class CompetitionsDetails
+    public partial class CompetitionsDetails
     {
         // ab hier Wettkampfdetails
         [JsonPropertyName("EventGroups")]
@@ -43,13 +43,13 @@ namespace TrackAndFieldResults.Omega
 
     }
 
-    public class EventGroup
+    public partial class EventGroup
     {
         [JsonPropertyName("Events")]
         public Dictionary<string, @Event> Events { get; set; }
     }
 
-    public class @Event
+    public partial class @Event
     {
         [JsonPropertyName("HasCISConfig")]
         public bool HasCISConfig { get; set; }

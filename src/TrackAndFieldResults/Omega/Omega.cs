@@ -13,7 +13,7 @@ namespace TrackAndFieldResults.Omega
     /// CHild of a competitor. A relay is a competitor
     /// with 4 childrend competitor
     /// </summary>
-    public class CompetitorChild
+    public partial class CompetitorChild
     {
         /// <summary>
         /// Competitior Id of a athlet of a relay
@@ -25,7 +25,7 @@ namespace TrackAndFieldResults.Omega
     /// <summary>
     /// Athlete of the Event
     /// </summary>
-    public class Athlete
+    public partial class Athlete
     {
         /// <summary>
         /// All athletes in case of a relay
@@ -124,7 +124,7 @@ namespace TrackAndFieldResults.Omega
     /// <summary>
     /// Details of an Event/Disciplin
     /// </summary>
-    public class EventDetails
+    public partial class EventDetails
     {
         [JsonPropertyName("Records")]
         public List<Record> Records { get; set; }
@@ -198,7 +198,7 @@ namespace TrackAndFieldResults.Omega
         public Dictionary<string, Athlete> Resultlist { get; set; }
     }
 
-    public class Content
+    public partial class Content
     {
         [JsonPropertyName("full")]
         public EventDetails Full { get; set; }
@@ -209,7 +209,7 @@ namespace TrackAndFieldResults.Omega
     /// der Athlet auch auslassen kann und damit
     /// keine Leistung erreicht hat.
     /// </summary>
-    public class Intermediate
+    public partial class Intermediate
     {
         /// <summary>
         /// Versuchsnummer bei horizontalen Sprüngen
@@ -253,7 +253,7 @@ namespace TrackAndFieldResults.Omega
     /// Einstiegspunkt für eine Disziplin eines 
     /// Wettkampfes
     /// </summary>
-    public class EventRoot
+    public partial class EventRoot
     {
         [JsonPropertyName("uid")]
         public int Uid { get; set; }
@@ -268,7 +268,7 @@ namespace TrackAndFieldResults.Omega
     /// Dictionary mit verschiedenen
     /// Ids bzw. Teilen der Ids
     /// </summary>
-    public class Rsc
+    public partial class Rsc
     {
         [JsonPropertyName("Discipline")]
         public string Discipline { get; set; }
@@ -309,7 +309,7 @@ namespace TrackAndFieldResults.Omega
     /// <summary>
     /// Höhen beim Hoch- Stabhochsprung
     /// </summary>
-    public class Split
+    public partial class Split
     {
         [JsonPropertyName("Number")]
         public int Number { get; set; }
@@ -321,7 +321,7 @@ namespace TrackAndFieldResults.Omega
         public Dictionary<string, string> NameTranslations { get; set; }
     }
 
-    public class Stats
+    public partial class Stats
     {
         [JsonPropertyName("Att")]
         public string Att { get; set; }
@@ -375,7 +375,7 @@ namespace TrackAndFieldResults.Omega
         public string Wind { get; set; }
     }
 
-    public class Record
+    public partial class Record
     {
         [JsonPropertyName("Code")]
         public string Code { get; set; }
@@ -390,7 +390,7 @@ namespace TrackAndFieldResults.Omega
     /// Einträge in der offiziellen Startliste
     /// des Vorkampfes
     /// </summary>
-    public class StartlistEntry
+    public partial class StartlistEntry
     {
         /// <summary>
         /// List of All athletes of a relay 
@@ -405,7 +405,7 @@ namespace TrackAndFieldResults.Omega
         public string Id { get; set; }
     }
 
-    public class Details
+    public partial class Details
     {
     }
 

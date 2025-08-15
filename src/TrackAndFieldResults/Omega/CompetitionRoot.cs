@@ -10,7 +10,7 @@ namespace TrackAndFieldResults.Omega
     /// <summary>
     /// Einstiegspunkt für die Abfrage der Wettkampf-Details
     /// </summary>
-    public class CompetitionRoot
+    public partial class CompetitionRoot
     {
         [JsonPropertyName("uid")]
         public int Uid { get; set; }
@@ -22,13 +22,13 @@ namespace TrackAndFieldResults.Omega
         public CompetitionContent Content { get; set; }
     }
 
-    public class CompetitionContent
+    public partial class CompetitionContent
     {
         [JsonPropertyName("full")]
         public CompetitionDetails Full { get; set; }
     }
 
-    public class CompetitionDetails
+    public partial class CompetitionDetails
     {
         // ab hier Wettkampfdetails
         [JsonPropertyName("SeasonId")]
