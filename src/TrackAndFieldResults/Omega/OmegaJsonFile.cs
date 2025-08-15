@@ -83,7 +83,7 @@ namespace TrackAndFieldResults.Omega
     }
 
     /// <summary>
-    /// Some Extentitions 
+    /// Some Extentions 
     /// </summary>
     public static class Extentions
     {

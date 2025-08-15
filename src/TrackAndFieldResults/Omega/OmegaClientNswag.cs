@@ -20,7 +20,7 @@ namespace TrackAndFieldResults.Omega
     /// <summary>
     /// NSwag inspired and customized class.
     /// </summary>
-    /// <remarks>so I don't have to link some library</remarks>
+    /// <remarks>so I don't have to link some libraries</remarks>
     public partial class OmegaClient
     {
         private string _baseUrl;
