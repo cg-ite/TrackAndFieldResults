@@ -17,7 +17,7 @@ namespace TrackAndFieldResults.Omega
         /// Returns the details of the Event
         /// </summary>
         /// <returns></returns>
-        public EventRoot GetEventRoot(string path)
+        public EventRoot GetEvent(string path)
         {
             using (StreamReader r = new StreamReader(path))
             {

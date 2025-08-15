@@ -122,7 +122,7 @@ namespace TrackAndFieldResults.Omega
             string _address = GetEventUrl(competitionKey, eventKey);
             // Send asynchronous request
             await _httpClient.DownloadFileTaskAsync(new Uri(_baseuri, _address), fullname);
-            return new OmegaJsonFile().GetEventRoot(fullname);
+            return new OmegaJsonFile().GetEvent(fullname);
         }
 
         //return "https://livecache.sportresult.com";
