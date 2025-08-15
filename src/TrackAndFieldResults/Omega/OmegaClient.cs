@@ -25,10 +25,12 @@ namespace TrackAndFieldResults.Omega
 
         //public OmegaUrls Urls { get; set; } = new OmegaUrls();
 
+        private Uri _baseuri;
         public OmegaClient(string baseurl)
         {
             //if (urls != null) { Urls = urls; }
             BaseUrl = baseurl;
+            _baseuri = new Uri(baseurl);
             // https://stackoverflow.com/questions/29801195/adding-headers-when-using-httpclient-getasync
             _httpClient = new HttpClient();
             // headers for all consecutive requests
@@ -58,7 +60,7 @@ namespace TrackAndFieldResults.Omega
             foreach (var id in schedule.Content.Full.Units.Keys)
             {
                 string fullname = Path.Combine(path, $"{competition}_{id}.json");
-                var evt = await EventAsync(competition, id, fullname);
+                var evt = await EventAsync(competition.ToUpper(), id, fullname);
                 Thread.Sleep(500);
             }
             return true;
@@ -76,9 +78,9 @@ namespace TrackAndFieldResults.Omega
         /// Verbindung besteht oder die Wettkämpfe nicht gefunden wird.</exception>
         public async Task<CompetitionsRoot> CompetitionsAsync(string fullname)
         {
-            string _address = $"{_baseUrl}{GetCompetitionsUrl()}";
+            string _address = GetCompetitionsUrl();
             // Send asynchronous request
-            await _httpClient.DownloadFileTaskAsync(new Uri(_address), fullname);
+            await _httpClient.DownloadFileTaskAsync(new Uri(_baseuri, _address), fullname);
             return new OmegaJsonFile().GetCompetitions(fullname); ;
         }
         /// <summary>
@@ -89,9 +91,9 @@ namespace TrackAndFieldResults.Omega
         /// <returns></returns>
         public async Task<CompetitionRoot> CompetitionDetailsAsync(string competition, string fullname)
         {
-            string _address = $"{_baseUrl}{GetCompetitionDetailsUrl(competition)}";
+            string _address = GetCompetitionDetailsUrl(competition);
             // Send asynchronous request
-            await _httpClient.DownloadFileTaskAsync(new Uri(_address), fullname);
+            await _httpClient.DownloadFileTaskAsync(new Uri(_baseuri,_address), fullname);
             return new OmegaJsonFile().GetCompetitionDetails(fullname); ;
         }
         /// <summary>
@@ -102,9 +104,9 @@ namespace TrackAndFieldResults.Omega
         /// <returns></returns>
         public async Task<ScheduleRoot> ScheduleAsync(string competition, string fullname)
         {
-            string _address = $"{_baseUrl}{GetScheduleUrl(competition)}";
+            string _address = GetScheduleUrl(competition);
             // Send asynchronous request
-            await _httpClient.DownloadFileTaskAsync(new Uri(_address), fullname);
+            await _httpClient.DownloadFileTaskAsync(new Uri( _baseuri, _address), fullname);
 
             return new OmegaJsonFile().GetSchedule(fullname);
         }
@@ -117,9 +119,9 @@ namespace TrackAndFieldResults.Omega
         /// <returns></returns>
         public async Task<EventRoot> EventAsync(string competitionKey, string eventKey, string fullname)
         {
-            string _address = $"{_baseUrl}{GetEventUrl(competitionKey, eventKey)}";
+            string _address = GetEventUrl(competitionKey, eventKey);
             // Send asynchronous request
-            await _httpClient.DownloadFileTaskAsync(new Uri(_address), fullname);
+            await _httpClient.DownloadFileTaskAsync(new Uri(_baseuri, _address), fullname);
             return new OmegaJsonFile().GetEventRoot(fullname);
         }
 
@@ -133,7 +135,7 @@ namespace TrackAndFieldResults.Omega
         /// <returns></returns>
         public string GetCompetitionDetailsUrl(string competitionKey)
         {
-            return $"/node/db/ATH_PROD/{competitionKey}_CURRENTEVENT_JSON.json?s=unknown&t=0";
+            return $"node/db/ATH_PROD/{competitionKey.ToUpper()}_CURRENTEVENT_JSON.json?s=unknown&t=0";
         }
         /// <summary>
         /// Gibt die Url für die Übersichtsseite einiger
@@ -143,7 +145,7 @@ namespace TrackAndFieldResults.Omega
         /// <returns></returns>
         public string GetCompetitionsUrl()
         {
-            return $"/node/db/ATH_PROD/CIS_CONFIG_STATUS_JSON.json";
+            return $"node/db/ATH_PROD/CIS_CONFIG_STATUS_JSON.json";
         }
         /// <summary>
         /// Erstellt die Url für den Zeitplan eines Wettkampfes
@@ -152,7 +154,7 @@ namespace TrackAndFieldResults.Omega
         /// <returns></returns>
         public string GetScheduleUrl(string competitionKey)
         {
-            return $"/node/db/ATH_PROD/{competitionKey}_SCHEDULE_JSON.json";
+            return $"node/db/ATH_PROD/{competitionKey.ToUpper()}_SCHEDULE_JSON.json";
         }
         /// <summary>
         /// 
@@ -162,7 +164,7 @@ namespace TrackAndFieldResults.Omega
         /// <returns></returns>
         public string GetEventUrl(string competitionKey, string eventKey)
         {
-            return $"/node/db/ATH_PROD/{competitionKey}_TIMING_{eventKey}_JSON.json";
+            return $"node/db/ATH_PROD/{competitionKey}_TIMING_{eventKey}_JSON.json";
         }
     }
 }
