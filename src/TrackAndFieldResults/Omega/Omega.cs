@@ -46,6 +46,10 @@ namespace TrackAndFieldResults.Omega
         /// </summary>
         [JsonPropertyName("StartPos")]
         public string StartPos { get; set; }
+        /// <summary>
+        /// Startposition zu Beginn des Wettkampfes
+        /// </summary>
+        public int InitialStartPos { get; set; }
 
         [JsonPropertyName("RankIndex")]
         public int RankIndex { get; set; }
@@ -290,8 +294,14 @@ namespace TrackAndFieldResults.Omega
         [JsonPropertyName("ValueEvent")]
         public string ValueEvent { get; set; }
 
+        [JsonPropertyName("ValueUnit")]
+        public string ValueUnit { get; set; }
+
         [JsonPropertyName("LongEvent")]
         public string LongEvent { get; set; }
+        
+        [JsonPropertyName("LongPhase")]
+        public string LongPhase { get; set; }
 
         [JsonPropertyName("ValuePhase")]
         public string ValuePhase { get; set; }
