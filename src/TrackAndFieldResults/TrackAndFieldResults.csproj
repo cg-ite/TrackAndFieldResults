@@ -7,8 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Common\CodyApi.cs" />
     <Compile Remove="Omega\ClientNswag.cs" />
+    <Compile Remove="Omega\OmegaAttemptEntry.cs" />
+    <Compile Remove="Omega\OmegaExtensions.cs" />
     <Compile Remove="Omega\swagger1.cs" />
+    <Compile Remove="Seltec\AthonCompetition.cs" />
   </ItemGroup>
 
 </Project>

@@ -25,7 +25,7 @@ namespace TrackAndFieldResults.Seltec
     using System = global::System;
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.5.0.0 (NJsonSchema v11.4.0.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class SeltecAthonClient
+    public partial class SeltecAthonClientGenerated
     {
 #pragma warning disable 8618
         private string _baseUrl;
@@ -36,7 +36,7 @@ namespace TrackAndFieldResults.Seltec
         private System.Text.Json.JsonSerializerOptions _instanceSettings;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public SeltecAthonClient(System.Net.Http.HttpClient httpClient)
+        public SeltecAthonClientGenerated(System.Net.Http.HttpClient httpClient)
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             BaseUrl = "https://ergebnisse.leichtathletik.de";

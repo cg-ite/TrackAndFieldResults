@@ -1,9 +1,8 @@
-﻿/* SPDX-SnippetBegin
-* SPDX-FileCopyrightText: Copyright (c) 2021 NSwag
-*
-* SPDX-License-Identifier: MIT
-* https://github.com/RicoSuter/NSwag
-* 
+﻿/*
+ * SPDX - FileCopyrightText: Copyright © 2025 Christian Günther <cg-ite@gmx.de>
+ * SPDX - License - Identifier: GPL - 3.0 - or - later
+ * loosly taken from https://github.com/RicoSuter/NSwag
+ * 
 The MIT License (MIT)
 
 Copyright (c) 2021 Rico Suter
@@ -15,17 +14,29 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
  */
+using System.Text;
+
 namespace TrackAndFieldResults.Omega
 {
     /// <summary>
-    /// NSwag inspired and customized class.
+    /// Json client for getting Omega results
     /// </summary>
-    /// <remarks>so I don't have to link some libraries</remarks>
+    /// <remarks>NSwag inspired, because Seltec uses swagger. so sehen die APIs ähnlich aus.</remarks>
     public partial class OmegaClient
     {
+        private readonly HttpClient _httpClient;
         private string _baseUrl;
         private static System.Lazy<System.Text.Json.JsonSerializerOptions> _settings = new System.Lazy<System.Text.Json.JsonSerializerOptions>(CreateSerializerSettings, true);
         private System.Text.Json.JsonSerializerOptions _instanceSettings;
+
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        public OmegaClient(System.Net.Http.HttpClient httpClient)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        {
+            BaseUrl = "https://ps-cache.web.swisstiming.com";
+            _httpClient = httpClient;
+            Initialize();
+        }
 
         private static System.Text.Json.JsonSerializerOptions CreateSerializerSettings()
         {
@@ -54,94 +65,88 @@ namespace TrackAndFieldResults.Omega
         }
 
         /// <summary>
+        /// Generiert aus dem Wettkampfnamen die Url
+        /// für den Download der Wettkmapf-Details
+        /// </summary>
+        /// <param name="competitionKey">Name des Wettkampfes aus Omega-Liste</param>
+        /// <returns></returns>
+        public string GetCompetitionDetailsUrl(string competitionKey)
+        {
+            return $"node/db/ATH_PROD/{competitionKey.ToUpper()}_CURRENTEVENT_JSON.json?s=unknown&t=0";
+        }
+
+        /// <summary>
+        /// Gibt die Url für die Übersichtsseite einiger
+        /// Wettkämpfe zurück. Meist sind ältere Wettkämpfe
+        /// noch erreichbar
+        /// </summary>
+        /// <returns></returns>
+        public string GetCompetitionsUrl()
+        {
+            return $"node/db/ATH_PROD/CIS_CONFIG_STATUS_JSON.json";
+        }
+
+        /// <summary>
+        /// Erstellt die Url für den Zeitplan eines Wettkampfes
+        /// </summary>
+        /// <param name="competitionKey">Event-Name des Wettkampfes aus der competitioins list</param>
+        /// <returns></returns>
+        public string GetScheduleUrl(string competitionKey)
+        {
+            return $"node/db/ATH_PROD/{competitionKey.ToUpper()}_SCHEDULE_JSON.json";
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="competitionKey">Event-Id des Wettkampfes</param>
+        /// <param name="eventKey"></param>
+        /// <returns></returns>
+        public string GetEventUrl(string competitionKey, string eventKey)
+        {
+            return $"node/db/ATH_PROD/{competitionKey}_TIMING_{eventKey}_JSON.json";
+        }
+
+        /// <summary>
         /// Get a list of known competitions, but you won't get the results 
         /// of all competitons in this list. Some older competitons are 
         /// removed by Omega. Sometimes you can get the data of previous
         /// competitions, which are not in the list.
         /// </summary>
-        /// <param name="lang">Language code (en, de, ...)</param>
+        /// <param name="cancellationToken">A cancellationToken</param>
         /// <returns>A list of available competitions</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async Task<CompetitionsRoot> GetCompetitionsAsync(string lang = "en")
+        public virtual async Task<CompetitionsRoot> GetCompetitionsAsync(System.Threading.CancellationToken cancellationToken)
         {
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
+            return await GetJsonAsync<CompetitionsRoot>(GetCompetitionsUrl(), cancellationToken);
+        }
 
-                    if (lang != null)
-                        request_.Headers.TryAddWithoutValidation("Lang", ConvertToString(lang, System.Globalization.CultureInfo.InvariantCulture));
-                    request_.Method = new System.Net.Http.HttpMethod("GET");
+        /// <summary>
+        /// Get a list of known competitions, but you won't get the results 
+        /// of all competitons in this list. Some older competitons are 
+        /// removed by Omega. Sometimes you can get the data of previous
+        /// competitions, which are not in the list.
+        /// </summary>
+        /// <returns>A list of available competitions</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async Task<CompetitionsRoot> GetCompetitionsAsync()
+        {
+            return await GetJsonAsync<CompetitionsRoot>(GetCompetitionsUrl(), System.Threading.CancellationToken.None);
+        }
 
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    
-                    urlBuilder_.Append(GetCompetitionsUrl());
-                    
-                    PrepareRequest(client_, request_, urlBuilder_);
 
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    PrepareRequest(client_, request_, url_);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        ProcessResponse(client_, response_);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<CompetitionsRoot>(response_, headers_).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
-                        }
-                        else
-                        if (status_ == 403)
-                        {
-                            string responseText_ = (response_.Content == null) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
-                        }
-                        else
-                        if (status_ == 404)
-                        {
-                            string responseText_ = (response_.Content == null) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
+        /// <summary>
+        /// Gets the details of a competition. You will find the name
+        /// and date of competition here.
+        /// </summary>
+        /// <param name="competitionKey">The competition-Id from the competitions list</param>
+        /// <param name="cancellationToken">A cancellationToken</param>
+        /// <returns>the details of a competition</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async Task<CompetitionRoot> GetCompetitionDetailsAsync(string competitionKey, System.Threading.CancellationToken cancellationToken)
+        {
+            return await GetJsonAsync<CompetitionRoot>(GetCompetitionDetailsUrl(competitionKey), cancellationToken);
+            
         }
 
         /// <summary>
@@ -149,89 +154,12 @@ namespace TrackAndFieldResults.Omega
         /// and date of competition here.
         /// </summary>
         /// <param name="competitionKey">The competition-Id from the competitions list</param>
-        /// <param name="lang">Language code (en, de, ...)</param>
         /// <returns>the details of a competition</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async Task<CompetitionRoot> GetCompetitionDetailsAsync(string competitionKey, string lang = "en")
+        public virtual async Task<CompetitionRoot> GetCompetitionDetailsAsync(string competitionKey)
         {
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-
-                    if (lang != null)
-                        request_.Headers.TryAddWithoutValidation("Lang", ConvertToString(lang, System.Globalization.CultureInfo.InvariantCulture));
-                    request_.Method = new System.Net.Http.HttpMethod("GET");
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    
-                    urlBuilder_.Append(GetCompetitionDetailsUrl(competitionKey));
-                    
-                    PrepareRequest(client_, request_, urlBuilder_);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    PrepareRequest(client_, request_, url_);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        ProcessResponse(client_, response_);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<CompetitionRoot>(response_, headers_).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
-                        }
-                        else
-                        if (status_ == 403)
-                        {
-                            string responseText_ = (response_.Content == null) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
-                        }
-                        else
-                        if (status_ == 404)
-                        {
-                            string responseText_ = (response_.Content == null) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
+            return await GetJsonAsync<CompetitionRoot>(GetCompetitionDetailsUrl(competitionKey), System.Threading.CancellationToken.None);
+            
         }
 
         /// <summary>
@@ -239,89 +167,24 @@ namespace TrackAndFieldResults.Omega
         /// a competition here.
         /// </summary>
         /// <param name="competitionKey">The competition-Id from the competitions list</param>
-        /// <param name="lang">Language code (en, de, ...)</param>
+        /// <param name="cancellationToken">A cancellationToken</param>
         /// <returns>the schedule of a competition</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async Task<ScheduleRoot> GetScheduleAsync(string competitionKey, string lang = "en")
+        public virtual async Task<ScheduleRoot> GetScheduleAsync(string competitionKey, System.Threading.CancellationToken cancellationToken)
         {
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
+            return await GetJsonAsync<ScheduleRoot>(GetScheduleUrl(competitionKey), cancellationToken);
+        }
 
-                    if (lang != null)
-                        request_.Headers.TryAddWithoutValidation("Lang", ConvertToString(lang, System.Globalization.CultureInfo.InvariantCulture));
-                    request_.Method = new System.Net.Http.HttpMethod("GET");
-
-                    var urlBuilder_ = new System.Text.StringBuilder();
-                    if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    
-                    urlBuilder_.Append(GetScheduleUrl(competitionKey));
-                    
-                    PrepareRequest(client_, request_, urlBuilder_);
-
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-
-                    PrepareRequest(client_, request_, url_);
-
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
-                        foreach (var item_ in response_.Headers)
-                            headers_[item_.Key] = item_.Value;
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-
-                        ProcessResponse(client_, response_);
-
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<ScheduleRoot>(response_, headers_).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
-                        }
-                        else
-                        if (status_ == 403)
-                        {
-                            string responseText_ = (response_.Content == null) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
-                        }
-                        else
-                        if (status_ == 404)
-                        {
-                            string responseText_ = (response_.Content == null) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
+        /// <summary>
+        /// Gets the schedule of a competition.You will find all events/disiplins of
+        /// a competition here.
+        /// </summary>
+        /// <param name="competitionKey">The competition-Id from the competitions list</param>
+        /// <returns>the schedule of a competition</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async Task<ScheduleRoot> GetScheduleAsync(string competitionKey)
+        {
+            return await GetJsonAsync<ScheduleRoot>(GetScheduleUrl(competitionKey), System.Threading.CancellationToken.None);
         }
 
         /// <summary>
@@ -329,10 +192,29 @@ namespace TrackAndFieldResults.Omega
         /// competitor- and resultlists.
         /// </summary>
         /// <param name="competitionKey">The competition-Id from the competitions list</param>
-        /// <param name="lang">Language code (en, de, ...)</param>
+        /// <param name="cancellationToken">A cancellationToken</param>
         /// <returns>the schedule of a competition</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async Task<EventRoot> GetEventDetailsAsync(string competitionKey, string eventKey, string lang = "en")
+        public virtual async Task<EventRoot> GetEventDetailsAsync(string competitionKey, string eventKey, System.Threading.CancellationToken cancellationToken)
+        {
+            return await GetJsonAsync<EventRoot>(GetEventUrl(competitionKey, eventKey), cancellationToken);
+            
+        }
+
+        /// <summary>
+        /// Gets the details of a event of a competition. You will find the start-, 
+        /// competitor- and resultlists.
+        /// </summary>
+        /// <param name="competitionKey">The competition-Id from the competitions list</param>
+        /// <returns>the schedule of a competition</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async Task<EventRoot> GetEventDetailsAsync(string competitionKey, string eventKey)
+        {
+            return await GetJsonAsync<EventRoot>(GetEventUrl(competitionKey, eventKey), System.Threading.CancellationToken.None);
+            
+        }
+
+        private async Task<T> GetJsonAsync<T>(string url, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -341,14 +223,12 @@ namespace TrackAndFieldResults.Omega
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
 
-                    if (lang != null)
-                        request_.Headers.TryAddWithoutValidation("Lang", ConvertToString(lang, System.Globalization.CultureInfo.InvariantCulture));
                     request_.Method = new System.Net.Http.HttpMethod("GET");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
                     
-                    urlBuilder_.Append(GetEventUrl(competitionKey, eventKey));
+                    urlBuilder_.Append(url);
                     
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -357,7 +237,7 @@ namespace TrackAndFieldResults.Omega
 
                     PrepareRequest(client_, request_, url_);
 
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
                     var disposeResponse_ = true;
                     try
                     {
@@ -375,7 +255,7 @@ namespace TrackAndFieldResults.Omega
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<EventRoot>(response_, headers_).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<T>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -385,18 +265,18 @@ namespace TrackAndFieldResults.Omega
                         else
                         if (status_ == 403)
                         {
-                            string responseText_ = (response_.Content == null) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            string responseText_ = (response_.Content == null) ? string.Empty : await response_.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                             throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
                         }
                         else
                         if (status_ == 404)
                         {
-                            string responseText_ = (response_.Content == null) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            string responseText_ = (response_.Content == null) ? string.Empty : await response_.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                             throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
                         }
                         else
                         {
-                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                             throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
                         }
                     }
@@ -413,6 +293,7 @@ namespace TrackAndFieldResults.Omega
                     client_.Dispose();
             }
         }
+
 
         private string ConvertToString(object value, System.Globalization.CultureInfo cultureInfo)
         {
@@ -467,7 +348,8 @@ namespace TrackAndFieldResults.Omega
             var result = System.Convert.ToString(value, cultureInfo);
             return result == null ? "" : result;
         }
-        protected virtual async System.Threading.Tasks.Task<ObjectResponseResult<T>> ReadObjectResponseAsync<T>(System.Net.Http.HttpResponseMessage response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers)
+
+        protected virtual async System.Threading.Tasks.Task<ObjectResponseResult<T>> ReadObjectResponseAsync<T>(System.Net.Http.HttpResponseMessage response, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.Threading.CancellationToken cancellationToken)
         {
             if (response == null || response.Content == null)
             {
@@ -476,25 +358,25 @@ namespace TrackAndFieldResults.Omega
 
             if (ReadResponseAsString)
             {
-                var responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                ResponseText = await ReadAsStringAsync(response.Content, cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    var typedBody = System.Text.Json.JsonSerializer.Deserialize<T>(responseText, JsonSerializerSettings);
-                    return new ObjectResponseResult<T>(typedBody, responseText);
+                    var typedBody = System.Text.Json.JsonSerializer.Deserialize<T>(ResponseText, JsonSerializerSettings);
+                    return new ObjectResponseResult<T>(typedBody, ResponseText);
                 }
                 catch (System.Text.Json.JsonException exception)
                 {
                     var message = "Could not deserialize the response body string as " + typeof(T).FullName + ".";
-                    throw new ApiException(message, (int)response.StatusCode, responseText, headers, exception);
+                    throw new ApiException(message, (int)response.StatusCode, ResponseText, headers, exception);
                 }
             }
             else
             {
                 try
                 {
-                    using (var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                    using (var responseStream = await ReadAsStreamAsync(response.Content, cancellationToken).ConfigureAwait(false))
                     {
-                        var typedBody = await System.Text.Json.JsonSerializer.DeserializeAsync<T>(responseStream, JsonSerializerSettings).ConfigureAwait(false);
+                        var typedBody = await System.Text.Json.JsonSerializer.DeserializeAsync<T>(responseStream, JsonSerializerSettings, cancellationToken).ConfigureAwait(false);
                         return new ObjectResponseResult<T>(typedBody, string.Empty);
                     }
                 }
@@ -505,6 +387,27 @@ namespace TrackAndFieldResults.Omega
                 }
             }
         }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private static System.Threading.Tasks.Task<string> ReadAsStringAsync(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken)
+        {
+#if NET5_0_OR_GREATER
+            return content.ReadAsStringAsync(cancellationToken);
+#else
+            return content.ReadAsStringAsync();
+#endif
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private static System.Threading.Tasks.Task<System.IO.Stream> ReadAsStreamAsync(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken)
+        {
+#if NET5_0_OR_GREATER
+            return content.ReadAsStreamAsync(cancellationToken);
+#else
+            return content.ReadAsStreamAsync();
+#endif
+        }
+
         protected struct ObjectResponseResult<T>
         {
             public ObjectResponseResult(T responseObject, string responseText)
@@ -519,6 +422,25 @@ namespace TrackAndFieldResults.Omega
         }
 
         public bool ReadResponseAsString { get; set; }
+        /// <summary>
+        /// Raw text of the server response for caching or writing
+        /// to a file
+        /// </summary>
+        public string ResponseText { get; set; }
+
+        /// <summary>
+        /// Writes the contents of the response text to a file
+        /// </summary>
+        /// <param name="fileName"></param>
+        public void SaveResponseText(string fileName)
+        {
+            using (var fs = new StreamWriter(fileName,
+                    false, Encoding.UTF8))
+            {
+                fs.Write(ResponseText);
+            }
+        }
+
 
     }
 
