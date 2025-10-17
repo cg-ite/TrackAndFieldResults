@@ -12,7 +12,9 @@ namespace TrackAndFieldResults.Common
     public class Api
     {
         public static readonly List<ResultProvider> Provider = new List<ResultProvider>(
-            [new ResultProvider() { Id=0, Name="Omega", Client= new CommonOmegaClient() }]
+            [new ResultProvider() {
+                Id = ProviderId.Omega, Name="Omega",
+                Client= new CommonOmegaClient() }]
             );
 
         public static readonly List<IClient> Clients = Provider.

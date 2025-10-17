@@ -43,7 +43,7 @@ namespace TrackAndFieldResults.Common
             var res = events.OrderBy(e=> e.Key).Select((e, i) => new Competition()
             {
                 ProviderId = e.Key,
-                Provider = Provider.Omega,
+                ResultProviderId = ProviderId.Omega,
                 Name = GetName(e.Key),
                 StartDate = GetStartdate(e.Key),
                 Id = i,
