@@ -1,0 +1,79 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using TrackAndFieldResults.Omega;
+
+namespace TrackAndFieldResults.Common
+{
+    public class CommonOmegaClient : IClient
+    {
+        private OmegaClient _client;
+
+        public CommonOmegaClient() {
+            // last known url 2025-10
+            BaseUrl = "https://ps-cache.web.swisstiming.com";
+            
+            HttpClient httpClient = new();
+            httpClient.DefaultRequestHeaders.Add("Accept", "text/json");
+            var version = new Random(2783763).Next(100, 140);
+            httpClient.DefaultRequestHeaders.Add("User-Agent",
+                $"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/{version}.0");
+
+            _client = new OmegaClient(httpClient);
+            _client.BaseUrl = BaseUrl;
+            _client.ReadResponseAsString = true;    //for saving response to file
+        }
+        public string BaseUrl { get ; set ; }
+        /// <summary>
+        /// Gets all verfügbare competitions. expensive call please cache the 
+        /// competitions details.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<Competition[]> GetCompetitionsAsync(CancellationToken cancellationToken)
+        {
+            var comps = await _client.GetCompetitionsAsync();
+            var events = comps.Content.Full.Eventgroups.Values.SelectMany(eg =>
+                eg.Events);
+
+            // Namen noch _ löschen und Datum extrahieren
+            var res = events.OrderBy(e=> e.Key).Select((e, i) => new Competition()
+            {
+                ProviderId = e.Key,
+                Provider = Provider.Omega,
+                Name = GetName(e.Key),
+                StartDate = GetStartdate(e.Key),
+                Id = i,
+            });
+
+            return res.ToArray();
+        }
+
+        private string GetName(string key)
+        {
+            return key.Substring(0, key.Length - 4).Replace("_", "");
+        }
+
+        private DateTime GetStartdate(string key)
+        {
+            string year = key.Substring(key.Length-4, 4);
+            if(year.StartsWith("20"))
+            {
+                int y;
+                if(int.TryParse(year, out y))
+                {
+                    return new DateTime(y, 1, 1);
+                }
+            }
+            return new DateTime(1,1,1);
+        }
+
+        public Task<Competition[]> GetCompetitionsAsync()
+        {
+            return GetCompetitionsAsync(System.Threading.CancellationToken.None);
+        }
+    }
+}

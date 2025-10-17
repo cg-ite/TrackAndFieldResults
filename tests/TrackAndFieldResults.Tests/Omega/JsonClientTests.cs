@@ -16,7 +16,7 @@ namespace TrackAndFieldResults.Tests.Omega
     public class JsonClientTests
     {
         //changes sometimes
-        private const string baseUrl = "https://ps-cache.web.swisstiming.com";
+        public const string baseUrl = "https://ps-cache.web.swisstiming.com";
 
         private OmegaClient _client;
         private const string downloadPath = "C:\\Temp\\Omega";
