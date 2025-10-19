@@ -28,6 +28,8 @@ namespace TrackAndFieldResults.Common
         /// Provider which provides the competition
         /// </summary>
         public ProviderId ResultProviderId { get ; set ; }
+
+        public Event[] Schedule {  get ; set ; }
     }
 
 }

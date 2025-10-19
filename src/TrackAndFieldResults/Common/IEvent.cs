@@ -22,7 +22,7 @@ namespace TrackAndFieldResults.Common
         /// <summary>
         /// ID of the corresponding competition
         /// </summary>
-        long CompetitinonId { get; set; }
+        long CompetitionId { get; set; }
         /// <summary>Freetext name of Event, in local language</summary>
         string Longname { get; set; }
         /// <summary>

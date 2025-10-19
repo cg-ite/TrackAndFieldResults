@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TrackAndFieldResults.Omega;
+using TrackAndFieldResults.Utils;
 
 namespace TrackAndFieldResults.Common
 {
@@ -27,6 +28,14 @@ namespace TrackAndFieldResults.Common
             _client.ReadResponseAsString = true;    //for saving response to file
         }
         public string BaseUrl { get ; set ; }
+
+        /// <summary>
+        /// Cached competitions to minimizing requests. Lazy loading competitiondetails, 
+        /// if needed
+        /// </summary>
+        /// <remarks>Not null after calling <see cref="GetCompetitionsAsync()"/></remarks>
+        public Competition[] Competitions { get; set ; }
+        
         /// <summary>
         /// Gets all verfügbare competitions. expensive call please cache the 
         /// competitions details.
@@ -75,5 +84,56 @@ namespace TrackAndFieldResults.Common
         {
             return GetCompetitionsAsync(System.Threading.CancellationToken.None);
         }
+
+        public async Task<Competition> GetCompetitionDetailsAsync(string competitionKey, System.Threading.CancellationToken cancellationToken)
+        {
+            var res = new Competition();
+            // idee an dieser Stelle:
+            // - Details laden für namen
+            // - schedule laden, damit anfangs und end-datum bestimmt werden können
+            // - alle events sind schon da für auswahl
+
+            // kann auch bei Seltec umgesetzt werden
+            // WA und Atos funktionieren so ähnlich
+            var (details, schedule) = await TaskEx.WhenAll(
+                _client.GetCompetitionDetailsAsync(competitionKey, cancellationToken),
+                _client.GetScheduleAsync(competitionKey, cancellationToken));
+
+            if (details != null) {
+                res.Name = details.Content.Full.EventName;
+                res.Town = details.Content.Full.Header2;
+                res.ProviderId = details.Content.Full.EventId;
+            }
+            if (schedule != null)
+            {
+                var s = schedule.Content.Full;
+                res.StartDate = DateTime.Parse(s.ListDay.First());
+                res.EndDate = DateTime.Parse(s.ListDay.Last());
+
+                foreach (var ev in s.ListEvent)
+                {
+                    var cEvent = new Event()
+                    {
+                        ProviderId = ev.Key,
+                        StartDate = 
+                    };
+                }
+            }
+            return res;
+        }
+
+        /// <summary>
+        /// Gets the details of a competition. You will find the name
+        /// and date of competition here.
+        /// </summary>
+        /// <param name="competitionKey">The competition-Id from the competitions list</param>
+        /// <returns>the details of a competition</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public async Task<Competition> GetCompetitionDetailsAsync(string competitionKey)
+        {
+            return await GetCompetitionDetailsAsync(competitionKey, CancellationToken.None);
+
+        }
+
     }
 }
