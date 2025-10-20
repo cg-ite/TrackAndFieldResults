@@ -28,8 +28,9 @@ namespace TrackAndFieldResults.Common
         }
         public string BaseUrl { get ; set ; }
         /// <summary>
-        /// Gets all verfügbare competitions. expensive call please cache the 
-        /// competitions details.
+        /// Gets all competition keys from Omega. They have the name of the
+        /// competition and the year in the key. It would be too expensive 
+        /// to call Omega for every competitions details.
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
@@ -39,7 +40,6 @@ namespace TrackAndFieldResults.Common
             var events = comps.Content.Full.Eventgroups.Values.SelectMany(eg =>
                 eg.Events);
 
-            // Namen noch _ löschen und Datum extrahieren
             var res = events.OrderBy(e=> e.Key).Select((e, i) => new Competition()
             {
                 ProviderId = e.Key,
@@ -52,11 +52,21 @@ namespace TrackAndFieldResults.Common
             return res.ToArray();
         }
 
+        /// <summary>
+        /// Extracts the name from the key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
         private string GetName(string key)
         {
             return key.Substring(0, key.Length - 4).Replace("_", "");
         }
 
+        /// <summary>
+        /// Extracts the year form the key
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
         private DateTime GetStartdate(string key)
         {
             string year = key.Substring(key.Length-4, 4);

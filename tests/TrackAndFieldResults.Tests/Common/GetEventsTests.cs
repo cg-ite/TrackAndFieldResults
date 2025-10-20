@@ -34,7 +34,19 @@ public class GetEventsTests
     /// get results via client
     /// </summary>
     [Test]
-    public async Task Can_List_Provider()
+    public async Task Can_List_Provider_And_Clients()
+    {
+        Api.Provider.Where(p => p.Name == "Omega").Count().ShouldBe(1);
+        var omegaProvider = Api.Provider.Where(p => p.Name == "Omega").First();
+        omegaProvider.Id.ShouldBe(0);
+
+        Api.Clients[omegaProvider.Id].ShouldNotBeNull();
+        var c = Api.Clients[omegaProvider.Id];
+        c.ShouldNotBeNull();
+    }
+    
+    [Test]
+    public async Task Can_List_Omega_Competitions()
     {
         Api.Provider.Where(p => p.Name == "Omega").Count().ShouldBe(1);
         var omegaProvider = Api.Provider.Where(p => p.Name == "Omega").First();
@@ -44,6 +56,8 @@ public class GetEventsTests
         var c = Api.Clients[omegaProvider.Id];
         var events = await c.GetCompetitionsAsync();
     }
+
+
 
     [Test]
     public async Task GetEventsOmegaAsync()
