@@ -27,15 +27,9 @@ namespace TrackAndFieldResults.Common
         /// <summary>
         /// Provider which provides the competition
         /// </summary>
-        public Provider Provider { get ; set ; }
-    }
+        public ProviderId ResultProviderId { get ; set ; }
 
-    public enum Provider
-    {
-        Omega,
-        Seltec,
-        Worldathletics,
-        Atos
+        public Event[] Schedule {  get ; set ; }
     }
 
 }

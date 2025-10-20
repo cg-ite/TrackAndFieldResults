@@ -19,7 +19,7 @@ namespace TrackAndFieldResults.Common
         /// <summary>
         /// Provider of the result data
         /// </summary>
-        Provider Provider { get; set; }
+        ProviderId ResultProviderId { get; set; }
         
         /// <summary>Name of competition</summary>
         string Name { get; set; }

@@ -14,7 +14,7 @@ namespace TrackAndFieldResults.Common
         public ICollection<IEntry> Entries { get ; set ; }
         public long Id { get ; set ; }
         public string ProviderId { get ; set ; }
-        public long CompetitinonId { get ; set ; }
+        public long CompetitionId { get ; set ; }
         public DateTime? StartDate { get ; set ; }
         public DateTime? EndDate { get ; set ; }
         public string Longname { get ; set ; }
