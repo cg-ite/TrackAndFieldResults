@@ -95,7 +95,7 @@ namespace TrackAndFieldResults.Common
             return GetCompetitionsAsync(System.Threading.CancellationToken.None);
         }
 
-        public async Task<Competition> GetCompetitionDetailsAsync(string competitionKey, System.Threading.CancellationToken cancellationToken)
+        public async Task<Competition> GetCompetitionDetailsAsync(string competitionKey, CancellationToken cancellationToken)
         {
             var res = new Competition();
             // idee an dieser Stelle:
@@ -120,14 +120,14 @@ namespace TrackAndFieldResults.Common
                 res.StartDate = DateTime.Parse(s.ListDay.First());
                 res.EndDate = DateTime.Parse(s.ListDay.Last());
 
-                foreach (var ev in s.ListEvent)
-                {
-                    var cEvent = new Event()
-                    {
-                        ProviderId = ev.Key,
-                        StartDate = 
-                    };
-                }
+                var eventGrps = s.Units.Values
+                .OrderBy(u => u.Rsc.ValuePhase);
+                //.GroupBy(u => u.Rsc.ValuePhase);
+                var events = eventGrps.Select(g => ScheduleItem.FromEvent(g))
+                    .OrderBy(e => e.Longname)
+                    .ToArray();
+
+                res.Schedule = events;
             }
             return res;
         }
@@ -139,11 +139,10 @@ namespace TrackAndFieldResults.Common
         /// <param name="competitionKey">The competition-Id from the competitions list</param>
         /// <returns>the details of a competition</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public async Task<Competition> GetCompetitionDetailsAsync(string competitionKey)
+        public Task<Competition> GetCompetitionDetailsAsync(string competitionKey)
         {
-            return await GetCompetitionDetailsAsync(competitionKey, CancellationToken.None);
+            return GetCompetitionDetailsAsync(competitionKey, CancellationToken.None);
 
         }
-
     }
 }

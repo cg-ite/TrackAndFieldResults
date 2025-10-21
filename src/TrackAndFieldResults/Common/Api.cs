@@ -17,7 +17,8 @@ namespace TrackAndFieldResults.Common
                 Client= new CommonOmegaClient() }]
             );
 
-        public static readonly List<IClient> Clients = Provider.
-            OrderBy(p => p.Id).Select(p => p.Client).ToList();
+        public static readonly Dictionary<ProviderId, IClient> Clients = Provider.
+            OrderBy(p => p.Id).Select(p => new { p.Id, p.Client }).
+            ToDictionary(p =>  p.Id, v => v.Client);
     }
 }

@@ -38,7 +38,7 @@ public class GetEventsTests
     {
         Api.Provider.Where(p => p.Name == "Omega").Count().ShouldBe(1);
         var omegaProvider = Api.Provider.Where(p => p.Name == "Omega").First();
-        omegaProvider.Id.ShouldBe(0);
+        omegaProvider.Id.ShouldBe(ProviderId.Omega);
 
         Api.Clients[omegaProvider.Id].ShouldNotBeNull();
         var c = Api.Clients[omegaProvider.Id];
@@ -50,7 +50,7 @@ public class GetEventsTests
     {
         Api.Provider.Where(p => p.Name == "Omega").Count().ShouldBe(1);
         var omegaProvider = Api.Provider.Where(p => p.Name == "Omega").First();
-        omegaProvider.Id.ShouldBe(0);
+        omegaProvider.Id.ShouldBe(ProviderId.Omega);
 
         Api.Clients[omegaProvider.Id].ShouldNotBeNull();
         var c = Api.Clients[omegaProvider.Id];
@@ -60,17 +60,14 @@ public class GetEventsTests
 
 
     [Test]
-    public async Task GetEventsOmegaAsync()
+    public async Task Can_Get_Omega_CompetitionDetails()
     {
-        // Omega specific API
-        var comps = await _clientOmega.GetCompetitionsAsync();
-        comps.ShouldNotBeNull();
-        comps.Content.Full.Events.Count().ShouldBeGreaterThan(0);
-        comps.Content.Full.Eventgroups.Count().ShouldBeGreaterThan(0);
+        Api.Clients[ProviderId.Omega].ShouldNotBeNull();
+        var c = Api.Clients[ProviderId.Omega];
+        //var events = await c.GetCompetitionsAsync();
+        var details = await c.GetCompetitionDetailsAsync("DMDresden_2025");
+        details.ShouldNotBeNull();
 
-        
-        //var compsCommon = await _clientOmega.Omega.GetCompetitionsAsync();
-
-
+        //frage ob nur phasen und dann unit zur auswahl?
     }
 }
