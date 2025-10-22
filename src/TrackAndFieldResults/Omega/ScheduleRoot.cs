@@ -173,19 +173,19 @@ namespace TrackAndFieldResults.Omega
         public string EventNameShort { get; set; }
 
         [JsonPropertyName("EventName_Translations")]
-        public Dictionary<string, string> EventName_Translations { get; set; }
+        public Dictionary<string, string> EventNameTranslations { get; set; }
 
         [JsonPropertyName("PhaseName")]
         public string PhaseName { get; set; }
 
         [JsonPropertyName("PhaseName_Translations")]
-        public Dictionary<string, string> PhaseName_Translations { get; set; }
+        public Dictionary<string, string> PhaseNameTranslations { get; set; }
 
         [JsonPropertyName("UnitName")]
         public string UnitName { get; set; }
 
         [JsonPropertyName("UnitName_Translations")]
-        public Dictionary<string, string> UnitName_Translations { get; set; }
+        public Dictionary<string, string> UnitNameTranslations { get; set; }
 
         [JsonPropertyName("Date")]
         public string Date { get; set; }

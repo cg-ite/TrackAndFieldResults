@@ -156,10 +156,10 @@ namespace TrackAndFieldResults.Omega
         public Dictionary<string, string> UnitNameTranslations { get; set; }
 
         [JsonPropertyName("NameShort")]
-        public string NameShort { get; set; }
+        public string EventNameShort { get; set; }
 
         [JsonPropertyName("NameShort_Translations")]
-        public Dictionary<string, string> NameShortTranslations { get; set; }
+        public Dictionary<string, string> EventNameShortTranslations { get; set; }
 
         [JsonPropertyName("Status")]
         public string Status { get; set; }
