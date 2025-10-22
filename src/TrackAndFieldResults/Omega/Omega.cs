@@ -124,7 +124,7 @@ namespace TrackAndFieldResults.Omega
     /// <summary>
     /// Details of an Event/Disciplin
     /// </summary>
-    public partial class EventDetails
+    public partial class EventDetails : IEventDetails
     {
         [JsonPropertyName("Records")]
         public List<Record> Records { get; set; }

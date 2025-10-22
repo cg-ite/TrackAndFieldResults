@@ -153,9 +153,39 @@ namespace TrackAndFieldResults.Omega
         public List<object> ListSession { get; set; }
     }
     /// <summary>
+    /// Intterface for the common properties of the two
+    /// classes <see cref="EventSchedule"/> and 
+    /// <see cref="EventDetails"/>
+    /// </summary>
+    public interface IEventDetails
+    {
+        Rsc Rsc { get; set; }
+
+        string EventName { get; set; }
+        Dictionary<string, string> EventNameTranslations { get; set; }
+
+        string PhaseName { get; set; }
+        Dictionary<string, string> PhaseNameTranslations { get; set; }
+
+        string UnitName { get; set; }
+        Dictionary<string, string> UnitNameTranslations { get; set; }
+
+        string EventNameShort { get; set; }
+
+        string Status { get; set; }
+
+        long StartTime { get; set; }
+        long EndTime { get; set; }
+
+        string Medal { get; set; }
+
+        Stats Stats { get; set; }
+    }
+
+    /// <summary>
     /// Zeitplan Infos zu einer Disziplin
     /// </summary>
-    public class EventSchedule
+    public class EventSchedule : IEventDetails
     {
         [JsonPropertyName("Rsc")]
         public Rsc Rsc { get; set; }
