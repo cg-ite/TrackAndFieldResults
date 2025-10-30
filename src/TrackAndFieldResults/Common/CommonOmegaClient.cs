@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using TrackAndFieldResults.Omega;
 using TrackAndFieldResults.Utils;
 
@@ -123,7 +124,7 @@ namespace TrackAndFieldResults.Common
                 var eventGrps = s.Units.Values
                 .OrderBy(u => u.Rsc.ValuePhase);
                 //.GroupBy(u => u.Rsc.ValuePhase);
-                var events = eventGrps.Select(g => ScheduleItem.FromEvent(g))
+                var events = eventGrps.Select(g => ScheduleItem.FromEventDetails(g))
                     .OrderBy(e => e.Longname)
                     .ToArray();
 
@@ -142,7 +143,29 @@ namespace TrackAndFieldResults.Common
         public Task<Competition> GetCompetitionDetailsAsync(string competitionKey)
         {
             return GetCompetitionDetailsAsync(competitionKey, CancellationToken.None);
+        }
 
+        public async Task<Event> GetEventDetailsAsync(string competitionKey, string eventKey, CancellationToken cancellationToken)
+        {
+            var eventRoot = await _client.GetEventDetailsAsync(competitionKey, eventKey, cancellationToken);
+            var res = new Event();
+            if (eventRoot != null)
+            {
+                res = Event.FromEventDetails(eventRoot.Content.Full);
+
+                var competitors = eventRoot.Content.Full.CompetitorDetails.Values;
+                //var entries = competitors.Select(g => Event.FromEvent(g))
+                //    .OrderBy(e => e.Longname)
+                //    .ToArray();
+
+
+            }
+            return res;
+        }
+
+        public Task<Event> GetEventDetailsAsync(string competitionKey, string eventKey)
+        {
+            return GetEventDetailsAsync(competitionKey, eventKey, CancellationToken.None);
         }
     }
 }

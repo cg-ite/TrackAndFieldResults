@@ -33,59 +33,9 @@ namespace TrackAndFieldResults.Common
             return $"{Longname} - {Agegroups.First().Shortcode}";
         }
 
-        public static ScheduleItem FromEvent(EventSchedule evt, string language = "de")
+        public static ScheduleItem FromEventDetails(IEventDetails evt, string language = "de")
         {
-            // Bei DM ist EventName die Disziplin
-            // Bei MK ist EventName Zehnkampf
-            // Bei DM ist Phasename Finale o.ä.
-            // Bei MK ist Phasename die Disziplin
-            // Bei MK und DM sind Unit-Name Finale
-            var isCombined = evt.EventName.ToUpper().Contains("DECA") ||
-                evt.EventName.ToUpper().Contains("HEPTA") ||
-                evt.EventName.ToUpper().Contains("SIEBEN") ||
-                evt.EventName.ToUpper().Contains("ZEHN");
-
-            var name = evt.EventName;
-            var phaseName = evt.PhaseName;
-
-            if (evt.PhaseName_Translations.Count() > 0 &&
-                    evt.PhaseName_Translations.ContainsKey(language))
-            {
-
-                phaseName = evt.PhaseName_Translations[language];
-            }
-
-            if (evt.EventName_Translations.Count() > 0 &&
-                evt.EventName_Translations.ContainsKey(language))
-            {
-
-                name = evt.EventName_Translations[language];
-            }
-
-            var unitName = evt.UnitName;
-            if (evt.UnitName_Translations.Count() > 0 &&
-                    evt.UnitName_Translations.ContainsKey(language))
-            {
-
-                unitName = evt.UnitName_Translations[language];
-            }
-
-            // ValuePhase ist key um nach Heats zu suchen
-            // bei deutschen und Ratingen gibt es nur eine AK
-            return new ScheduleItem()
-            {
-                Longname = $"{name} {phaseName} {unitName}",
-                StartDate = evt.StartTime.ToDateTime(),
-                EndDate = evt.EndTime.ToDateTime(),
-                Agegroups = evt.Rsc.Gender.ToUpper() == "W" ?
-                    [GerAgegroups.All("W")] :
-                    [GerAgegroups.All("M")],
-                ProviderId = evt.Rsc.ValueUnit,
-                Unit = unitName,
-                Phase = phaseName,
-                Name = name,
-                Type = Enum.Parse<Type>(evt.Stats.Type,true)
-            };
+            return (ScheduleItem)Event.FromEventDetails(evt, language);
         }
     }
 

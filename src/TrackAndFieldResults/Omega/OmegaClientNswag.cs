@@ -104,7 +104,7 @@ namespace TrackAndFieldResults.Omega
         /// <returns></returns>
         public string GetEventUrl(string competitionKey, string eventKey)
         {
-            return $"node/db/ATH_PROD/{competitionKey}_TIMING_{eventKey}_JSON.json";
+            return $"node/db/ATH_PROD/{competitionKey.ToUpper()}_TIMING_{eventKey}_JSON.json";
         }
 
         /// <summary>

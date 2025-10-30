@@ -13,6 +13,7 @@ public class GetEventsTests
 {
     private OmegaClient _clientOmega;
     private const string downloadPath = "C:\\Temp\\Omega";
+    private const string CompetitionKey = "DMDresden_2025";
 
     [OneTimeSetUp]
     public void Setup()
@@ -67,7 +68,106 @@ public class GetEventsTests
         //var events = await c.GetCompetitionsAsync();
         var details = await c.GetCompetitionDetailsAsync("DMDresden_2025");
         details.ShouldNotBeNull();
+        details.Schedule.Count().ShouldBeGreaterThan(0);
+        
+    }
+    
+    [Test]
+    public async Task Can_Get_Omega_Event()
+    {
+        Api.Clients[ProviderId.Omega].ShouldNotBeNull();
+        var c = Api.Clients[ProviderId.Omega];
+        //var events = await c.GetCompetitionsAsync();
+        var details = await c.GetCompetitionDetailsAsync(CompetitionKey);
+        details.ShouldNotBeNull();
+        details.Schedule.Count().ShouldBeGreaterThan(0);
+        
+        var eId = details.Schedule.First().ProviderId;
+        eId.ShouldNotBeNull();
 
-        //frage ob nur phasen und dann unit zur auswahl?
+        var evnt = await c.GetEventDetailsAsync(CompetitionKey, eId);
+    }
+
+    /// <summary>
+    /// Gibt alle Startlisten zurück. Bei technischen Disziplinen
+    /// erfolgen nach 3 und ggf.5 neue Startlisten, da Athleten
+    /// nue nach ihren Leistungen sortiert werden.
+    /// Bei Läufen werden die Versuche nach Lauf und Bahn sortíert
+    /// zurückgegeben. Es gibt nur eine Startliste. Oder lieber pro
+    /// Lauf eine Startliste.
+    /// Bei der WM 2025 wurde nach dem 3., dem 4. und dem 5. neu
+    /// sortiert.
+    /// </summary>
+    /// <returns></returns>
+    [Test]
+    public async Task Can_Get_Startlists()
+    {
+        Api.Clients[ProviderId.Omega].ShouldNotBeNull();
+        var c = Api.Clients[ProviderId.Omega];
+        //var events = await c.GetCompetitionsAsync();
+        var details = await c.GetCompetitionDetailsAsync(CompetitionKey);
+        details.ShouldNotBeNull();
+        details.Schedule.Count().ShouldBeGreaterThan(0);
+        
+        var eId = details.Schedule.Where(e => e.Name.Contains("Weitsp")).First().ProviderId;
+        eId.ShouldNotBeNull();
+
+        var evt = await c.GetEventDetailsAsync(CompetitionKey, eId);
+        var startlists = evt.Startorders;
+        // besser so, da die listen syncron erstellt werden
+        // können ohne das event nochmal zu laden
+        // sonst würde es aussehen, als müsste man 
+        // immer das event runterladen
+        //var ranking = evt.GetRanking();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    [Test]
+    public async Task Can_Get_Attemptlist()
+    {
+        Api.Clients[ProviderId.Omega].ShouldNotBeNull();
+        var c = Api.Clients[ProviderId.Omega];
+        //var events = await c.GetCompetitionsAsync();
+        var details = await c.GetCompetitionDetailsAsync(CompetitionKey);
+        details.ShouldNotBeNull();
+        details.Schedule.Count().ShouldBeGreaterThan(0);
+        
+        var eId = details.Schedule.First().ProviderId;
+        eId.ShouldNotBeNull();
+
+        //var evnt = c.GetEventAttemptlistAsync(CompetitionKey, eId);
+    }
+    [Test]
+    public async Task Can_Get_Ranking()
+    {
+        Api.Clients[ProviderId.Omega].ShouldNotBeNull();
+        var c = Api.Clients[ProviderId.Omega];
+        //var events = await c.GetCompetitionsAsync();
+        var details = await c.GetCompetitionDetailsAsync(CompetitionKey);
+        details.ShouldNotBeNull();
+        details.Schedule.Count().ShouldBeGreaterThan(0);
+        
+        var eId = details.Schedule.First().ProviderId;
+        eId.ShouldNotBeNull();
+
+        //var evnt = c.GetEventRankingAsync(CompetitionKey, eId);
+    }
+
+    [Test]
+    public void Can_Convert_Time_To_Decimal()
+    {
+
+        if (TimeSpan.TryParse("1:24,23".Replace(",", "."), out TimeSpan ts))
+        {
+            ts.TotalSeconds.ShouldBe(84.23);
+        }
+        if (decimal.TryParse("1:24,23".Replace(",", "."), out decimal result))
+        {
+            result.ShouldBe((decimal)84.23);
+        }
+        Assert.Fail("Zeit zu decimal funktioniert so nicht");
     }
 }
