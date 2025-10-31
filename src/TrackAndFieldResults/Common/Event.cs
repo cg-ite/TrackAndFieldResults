@@ -14,7 +14,7 @@ namespace TrackAndFieldResults.Common
     public enum EventStatus
     {
         Unknown = 0,
-        Pending, 
+        Pending,
         Started,
         Finished
     }
@@ -26,17 +26,19 @@ namespace TrackAndFieldResults.Common
         /// <summary>
         /// Gibt den Status an Hand der Startzeit zurück
         /// </summary>
-        public EventStatus Status { get
+        public EventStatus Status
+        {
+            get
             {
                 var now = DateTime.Now;
-                if(StartDate.HasValue == false && EndDate.HasValue == false) 
-                    { return EventStatus.Unknown; }
-                if(StartDate.Value > now) 
-                    { return EventStatus.Pending; }
-                if(StartDate.Value < now && EndDate.Value > now) 
-                    { return EventStatus.Started; }
-                if(EndDate.Value < now) 
-                    { return EventStatus.Finished; }
+                if (StartDate.HasValue == false && EndDate.HasValue == false)
+                { return EventStatus.Unknown; }
+                if (StartDate.Value > now)
+                { return EventStatus.Pending; }
+                if (StartDate.Value < now && EndDate.Value > now)
+                { return EventStatus.Started; }
+                if (EndDate.Value < now)
+                { return EventStatus.Finished; }
                 return EventStatus.Unknown;
             }
         }
@@ -68,7 +70,7 @@ namespace TrackAndFieldResults.Common
         /// All attempts of a field competition, auch verzichtetet oder abgemeeldete 
         /// Versuche. Keine Versuche bei Läufen, diese Ergebnisse sind in Results
         /// </summary>
-        public Attempt[] Attemps {  get; set; }
+        public Attempt[] Attemps { get; set; }
         /// <summary>
         /// Bester Versuch von jedem Athleten, das beste Ergebnis.
         /// Die Ergebnisliste
@@ -126,7 +128,7 @@ namespace TrackAndFieldResults.Common
 
             if (eventDetails is EventDetails)
             {
-                var evtDetails = (EventDetails) eventDetails;
+                var evtDetails = (EventDetails)eventDetails;
                 // wir haben ein EventDetail aus einem Schedule bekommen
                 // CompDetails sind nicht vorhanden -> für ScheduleItem Cast
 
@@ -135,21 +137,68 @@ namespace TrackAndFieldResults.Common
                     Select(c => Athlete.FromAthlete(c.Value)).ToArray();
 
                 // Nur technische Disziplinen haben Startlisten und Versuche
-                if (evt.Type == Type.Height || evt.Type == Type.Width)
+
+                // Bei Hoch und Stabhochsprung jeden offiziellen "Versuch"
+                // teilen, da hier eine Höhe als Versuch gewertet wird
+
+                if (evt.Type == Type.Height)
+                {
+                    var heights = evtDetails.Splits;
+
+                    var attemptsTemp = evtDetails.CompetitorDetails.SelectMany(
+                        d => d.Value.Intermediate,
+                        (a, i) =>
+                        {
+                            return new
+                            {
+                                Athlete = a,
+                                Intermediate = i
+                            };
+                        })
+                        .Where(at => at.Intermediate.Result != "-" && at.Intermediate.Result != null)
+                        .OrderBy(at => at.Intermediate.Number);
+                    // .ThenBy(at => at.Athlete.StartPos);
+                    ;
+                    evt.Attemps = attemptsTemp.SelectMany(
+                                    at => at.Intermediate.Result.ToCharArray()
+                                        .Select((c, i) => new { c, i }),
+                                    (e, a) =>
+                                    {
+                                        // hack 
+                                        e.Intermediate.Result = a.c.ToString();
+                                        var att = Attempt.FromIntermediate(e.Intermediate,
+                                            e.Athlete.Key, evt.Type);
+                                        att.Number = a.i + 1;
+                                        if (Decimal.TryParse(heights[e.Intermediate.Number - 1].Name, out decimal height))
+                                        {
+                                            att.Height = height;
+                                        }
+                                        return att;
+                                    })
+                                    .OrderBy(a => a.Height)
+                                    .ThenBy(a => a.Number).ToArray();
+                                    //.ThenBy(a => a.Athlete.StartPos);
+                }
+                if (evt.Type == Type.Width)
                 {
                     // können null sein
                     evtDetails.AttemptSeparators = evtDetails.AttemptSeparators == null ?
                         Array.Empty<int>() : evtDetails.AttemptSeparators;
 
                     //if(evt.Status == EventStatus.Unknown) { return evt; }
-                    
+
                     var startlist = evtDetails.Startlist;
                     evt.Attemps = evtDetails.CompetitorDetails.SelectMany(
                         d => d.Value.Intermediate,
                         (a, i) =>
                         {
-                            return Attempt.FromIntermediate(i, a.Key, evt.Type);
-                        }).ToArray();
+                            return new { Athlete = a, Intermediate = i};
+                        })
+                        .Where(at => at.Intermediate.Result != null)
+                        .Select(dto => 
+                            Attempt.FromIntermediate(dto.Intermediate, 
+                            dto.Athlete.Key, evt.Type))
+                        .ToArray();
 
                 }
                 // Läufe haben keine Startlisten

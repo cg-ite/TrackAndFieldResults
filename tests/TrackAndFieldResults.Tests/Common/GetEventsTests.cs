@@ -88,6 +88,45 @@ public class GetEventsTests
         var evnt = await c.GetEventDetailsAsync(CompetitionKey, eId);
     }
 
+    [Test]
+    public async Task Can_Get_Omega_Attempts()
+    {
+        Api.Clients[ProviderId.Omega].ShouldNotBeNull();
+        var c = Api.Clients[ProviderId.Omega];
+        //var events = await c.GetCompetitionsAsync();
+        var details = await c.GetCompetitionDetailsAsync(CompetitionKey);
+        details.ShouldNotBeNull();
+        details.Schedule.Count().ShouldBeGreaterThan(0);
+
+        var eId = details.Schedule.Where(e => e.Name.Contains("Hochs")).First().ProviderId;
+        eId.ShouldNotBeNull();
+
+        var evt = await c.GetEventDetailsAsync(CompetitionKey, eId);
+        evt.Attemps.ShouldNotBeNull();
+        evt.Attemps.Count().ShouldBeGreaterThan(0);
+        evt.Attemps[0].ShouldNotBeNull();
+        // Result kann auch null sein, wenn der Athlet einen Fehlversuch
+        // hatte oder er verzichtet hat
+        evt.Attemps[0].Result.HasValue.ShouldBeFalse();
+        evt.Attemps[0].ResultRaw.ShouldNotBeEmpty();
+        evt.Attemps[0].FormattedResult().ShouldNotBeEmpty();
+        evt.Attemps[0].Height.Value.ShouldBeGreaterThan(1);
+    
+        eId = details.Schedule.Where(e => e.Name.Contains("Weits")).First().ProviderId;
+        eId.ShouldNotBeNull();
+
+        evt = await c.GetEventDetailsAsync(CompetitionKey, eId);
+        evt.Attemps.ShouldNotBeNull();
+        evt.Attemps.Count().ShouldBeGreaterThan(0);
+        evt.Attemps[0].ShouldNotBeNull();
+        // Result kann auch null sein, wenn der Athlet einen Fehlversuch
+        // hatte oder er verzichtet hat
+        evt.Attemps[0].Result.HasValue.ShouldBeTrue();
+        evt.Attemps[0].ResultRaw.ShouldNotBeEmpty();
+        evt.Attemps[0].FormattedResult().ShouldNotBeEmpty();
+        evt.Attemps[0].Result.Value.ShouldBeGreaterThan(1);
+    }
+
     /// <summary>
     /// Gibt alle Startlisten zurück. Bei technischen Disziplinen
     /// erfolgen nach 3 und ggf.5 neue Startlisten, da Athleten

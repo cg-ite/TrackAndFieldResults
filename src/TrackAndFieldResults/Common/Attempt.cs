@@ -3,6 +3,7 @@
  * SPDX - License - Identifier: GPL - 3.0 - or - later
  * code was sent as patch, no public git repo available
  */
+using TrackAndFieldResults.Common;
 using TrackAndFieldResults.Omega;
 
 namespace TrackAndFieldResults.Common
@@ -37,6 +38,7 @@ namespace TrackAndFieldResults.Common
         /// </summary>
         public string FormattedResult()
         {
+            if(Type == Type.Height) { return ResultRaw; }
             if (Result.HasValue == false) { return ""; }
             return Result.Value.ToString("0.00");
         }
@@ -51,9 +53,12 @@ namespace TrackAndFieldResults.Common
         /// Abstand am Brett bei Weit- und Dreisprung
         /// </summary>
         public decimal? Behind { get; set; }
-        
+
         public DateTimeOffset? StartTime { get; set; }
         public bool? IsBest { get; set; }
+        public bool IsInvalid { get; set; } = true;
+        public bool IsPassed { get; set; }
+        public bool IsDisqualified { get; set; }
 
         /// <summary>
         /// Bei Weit, Wurf:6.34, Bei Hoch: xo-, 
@@ -72,7 +77,9 @@ namespace TrackAndFieldResults.Common
         /// Würfe: Weite in m
         /// Läufe: Zeit in sec
         /// </summary>
-        public decimal? Result { get; set;}
+        public decimal? Result { get; set; }
+        public string ResultRaw { get; set; }
+        public decimal? Height { get; internal set; }
 
         public static Attempt FromIntermediate(Intermediate intermediate, string athletId,
             Type type)
@@ -81,28 +88,32 @@ namespace TrackAndFieldResults.Common
             attempt.AthleteId = athletId;
             attempt.Type = type;
             attempt.Number = intermediate.Number;
-            
-            var result = intermediate.Result;
+
+            attempt.ResultRaw = intermediate.Result;
             // Zeiten können nicht direkt zu decimal geparst werden
             if (attempt.Type == Type.Run || attempt.Type == Type.Relay)
             {
-                if (TimeSpan.TryParse(result, out TimeSpan ts))
-                {
-                    attempt.Result = (decimal)ts.TotalSeconds;
-                }
+                throw new InvalidOperationException("Events of type 'Run' or 'Relay' don't have attempts.");
             }
-            else
+
+            var attempts = new List<Attempt>();
+            attempt.IsInvalid = attempt.ResultRaw.ToLower() == "x";
+            attempt.IsPassed = attempt.ResultRaw.ToLower() == "-";
+            attempt.IsDisqualified = attempt.ResultRaw.ToLower().Contains("disq");
+            // alles andere sind Weiten/Höhen m
+            // hier fehlt noch verzichtet, ungültig, disq
+            if (decimal.TryParse(attempt.ResultRaw, out decimal res))
             {
-                // alles andere sind Weiten/Höhen m
-                if (decimal.TryParse(result, out decimal res))
-                {
-                    attempt.Result = res;
-                }
+                attempt.Result = res;
+
             }
-            if (Decimal.TryParse(intermediate.Wind, out decimal wind)) { 
+
+            if (Decimal.TryParse(intermediate.Wind, out decimal wind))
+            {
                 attempt.Wind = wind;
             }
-            if (Decimal.TryParse(intermediate.Behind, out decimal behind)) { 
+            if (Decimal.TryParse(intermediate.Behind, out decimal behind))
+            {
                 attempt.Behind = behind;
             }
             if (intermediate.Flag != null)
@@ -112,5 +123,7 @@ namespace TrackAndFieldResults.Common
 
             return attempt;
         }
+
+        
     }
 }
