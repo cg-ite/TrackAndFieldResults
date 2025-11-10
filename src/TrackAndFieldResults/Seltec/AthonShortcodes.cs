@@ -1,6 +1,7 @@
 ﻿/*
  * SPDX - FileCopyrightText: Copyright © 2021 Olympiastützpunkt Hessen <cguenther@lsbh.de>
  * SPDX - License - Identifier: GPL - 3.0 - or - later
+ * code was sent as patch, no public git repo available
  */
 
 namespace TrackAndFieldResults.Seltec

@@ -102,29 +102,29 @@ public class GetEventsTests
         eId.ShouldNotBeNull();
 
         var evt = await c.GetEventDetailsAsync(CompetitionKey, eId);
-        evt.Attemps.ShouldNotBeNull();
-        evt.Attemps.Count().ShouldBeGreaterThan(0);
-        evt.Attemps[0].ShouldNotBeNull();
+        evt.Attempts.ShouldNotBeNull();
+        evt.Attempts.Count().ShouldBeGreaterThan(0);
+        evt.Attempts[0].ShouldNotBeNull();
         // Result kann auch null sein, wenn der Athlet einen Fehlversuch
         // hatte oder er verzichtet hat
-        evt.Attemps[0].Result.HasValue.ShouldBeFalse();
-        evt.Attemps[0].ResultRaw.ShouldNotBeEmpty();
-        evt.Attemps[0].FormattedResult().ShouldNotBeEmpty();
-        evt.Attemps[0].Height.Value.ShouldBeGreaterThan(1);
+        evt.Attempts[0].Result.HasValue.ShouldBeFalse();
+        evt.Attempts[0].ResultRaw.ShouldNotBeEmpty();
+        evt.Attempts[0].FormattedResult().ShouldNotBeEmpty();
+        evt.Attempts[0].Height.Value.ShouldBeGreaterThan(1);
     
         eId = details.Schedule.Where(e => e.Name.Contains("Weits")).First().ProviderId;
         eId.ShouldNotBeNull();
 
         evt = await c.GetEventDetailsAsync(CompetitionKey, eId);
-        evt.Attemps.ShouldNotBeNull();
-        evt.Attemps.Count().ShouldBeGreaterThan(0);
-        evt.Attemps[0].ShouldNotBeNull();
+        evt.Attempts.ShouldNotBeNull();
+        evt.Attempts.Count().ShouldBeGreaterThan(0);
+        evt.Attempts[0].ShouldNotBeNull();
         // Result kann auch null sein, wenn der Athlet einen Fehlversuch
         // hatte oder er verzichtet hat
-        evt.Attemps[0].Result.HasValue.ShouldBeTrue();
-        evt.Attemps[0].ResultRaw.ShouldNotBeEmpty();
-        evt.Attemps[0].FormattedResult().ShouldNotBeEmpty();
-        evt.Attemps[0].Result.Value.ShouldBeGreaterThan(1);
+        evt.Attempts[0].Result.HasValue.ShouldBeTrue();
+        evt.Attempts[0].ResultRaw.ShouldNotBeEmpty();
+        evt.Attempts[0].FormattedResult().ShouldNotBeEmpty();
+        evt.Attempts[0].Result.Value.ShouldBeGreaterThan(1);
     }
 
     /// <summary>
@@ -148,7 +148,7 @@ public class GetEventsTests
         details.ShouldNotBeNull();
         details.Schedule.Count().ShouldBeGreaterThan(0);
         
-        var eId = details.Schedule.Where(e => e.Name.Contains("Weitsp")).First().ProviderId;
+        var eId = details.Schedule.Where(e => e.Name.Contains("Hochsp")).First().ProviderId;
         eId.ShouldNotBeNull();
 
         var evt = await c.GetEventDetailsAsync(CompetitionKey, eId);

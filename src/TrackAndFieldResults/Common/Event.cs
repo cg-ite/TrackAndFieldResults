@@ -4,6 +4,7 @@
  * code was sent as patch, no public git repo available
  */
 using System.Collections.Generic;
+using System.Globalization;
 using TrackAndFieldResults.Omega;
 
 namespace TrackAndFieldResults.Common
@@ -53,24 +54,96 @@ namespace TrackAndFieldResults.Common
         /// Bei technischen Disziplinen 2-4, durch Neusortierung nach den
         /// Versuchen
         /// </summary>
-        public SortedDictionary<int, string>[] Startorders { get; set; }
+        public SortedDictionary<string, int>[] Startorders { get; set; }
 
         /// <summary>
         /// Alle durchgeführten Versuche in der richtigen
         /// Reihenfolge, bei technischen Disziplinen. 
+        /// Je nach Anbieter muss entschieden werden, woher die
+        /// Daten kommen.
         /// </summary>
-        /// <remarks>Kann nach dem Wettkampf nicht rekonstruiert werden.</remarks>
-        //public IPerformance[] GetAttemptsInCompetitionOrder(
-        //    SortedDictionary<int, string[]> startorders)
-        //{
+        /// <remarks>Kann nach dem Wettkampf nur mit der ersten Startreihenfolge 
+        /// rekonstruiert werden. Diese muss vor dem Wettkampf gespeichert werden.</remarks>
+        public Attempt[] GetAttemptsInCompetitionOrder(
+            SortedDictionary<string, int>[] startorders)
+        {
+            if(Type != Type.Width)
+            {
+                return Attempts;
+            }
 
-        //}
+            Startorders= startorders;
+            var keys = GetWidthKeys(Attempts, startorders);
+            
+            var res = new List<Attempt>();
+            // MK ohne umsortieren
+            if (AttemptSeparators.Length == 0)
+            {
+                var vorkampf = Attempts
+                    .OrderBy(a => a.Number)
+                    .ThenBy(a => GetInitialStartposition(startorders, a.AthleteId));
+                res.AddRange(vorkampf); // Vorkampf
+                return res.ToArray();
+            }
+            // Standard: Weit, Kugel, ...; 3,5
+            var sorted = Attempts.Where(a => a.Number <= AttemptSeparators[0])
+                    .OrderBy(a => a.Number)
+                    .ThenBy(a => GetInitialStartposition(startorders, a.AthleteId));
+            res.AddRange(sorted); // Vorkampf
+
+            var endkampfPosition = keys.Where(a => a.PositionResult <= AttemptSeparators[0])
+                    .OrderBy(a => a.Result)
+                    .ThenBy(a => a.PositionResult)
+                    .ThenBy(a => a.PositionStart)
+                    .Reverse().DistinctBy(a => a.AthleteId).Take(8).Reverse();
+
+            for (var i = 0; i < AttemptSeparators[1] - AttemptSeparators[0]; i++)
+            {
+                foreach (var p in endkampfPosition)
+                {
+                    res.Add(Attempts
+                        .Where(a => a.Number == AttemptSeparators[0] + i + 1 &&
+                        a.AthleteId == p.AthleteId).First());
+                }
+            }
+
+            var finale = keys.Where(a => a.PositionResult <= AttemptSeparators[1])
+                    .OrderBy(a => a.Result)
+                    .ThenBy(a => a.PositionResult)
+                    .ThenBy(a => a.PositionStart)
+                    .Reverse().DistinctBy(a => a.AthleteId).Take(8).Reverse();
+
+            foreach (var p in finale)
+            {
+                res.Add(Attempts
+                    .Where(a => a.Number == AttemptSeparators[1] + 1 &&
+                    a.AthleteId == p.AthleteId).First());
+            }
+            return res.ToArray();
+        }
+
+        private int GetInitialStartposition(SortedDictionary<string, int>[] startorders,
+            string athleteId)
+        {
+            return startorders[0][athleteId];
+        }
+
+        public WidthSortKey[] GetWidthKeys(Attempt[] attempts,
+            SortedDictionary<string, int>[] startorders)
+        {
+            var widthkeys = attempts.Select(a =>
+                new WidthSortKey(
+                    a.Result.Value, 
+                    GetInitialStartposition(startorders, a.AthleteId),
+                    a.Number.Value, a.AthleteId));
+            return widthkeys.ToArray();
+        }
 
         /// <summary>
         /// All attempts of a field competition, auch verzichtetet oder abgemeeldete 
         /// Versuche. Keine Versuche bei Läufen, diese Ergebnisse sind in Results
         /// </summary>
-        public Attempt[] Attemps { get; set; }
+        public Attempt[] Attempts { get; set; }
         /// <summary>
         /// Bester Versuch von jedem Athleten, das beste Ergebnis.
         /// Die Ergebnisliste
@@ -123,9 +196,10 @@ namespace TrackAndFieldResults.Common
                 Unit = unitName,
                 Phase = phaseName,
                 Name = name,
-                Type = Enum.Parse<Type>(eventDetails.Stats.Type, true)
+                Type = Enum.Parse<Type>(eventDetails.Stats.Type, true),
             };
 
+            // Attempts 
             if (eventDetails is EventDetails)
             {
                 var evtDetails = (EventDetails)eventDetails;
@@ -156,10 +230,10 @@ namespace TrackAndFieldResults.Common
                             };
                         })
                         .Where(at => at.Intermediate.Result != "-" && at.Intermediate.Result != null)
-                        .OrderBy(at => at.Intermediate.Number);
-                    // .ThenBy(at => at.Athlete.StartPos);
+                        .OrderBy(at => at.Intermediate.Number)
+                        .ThenBy(at => at.Athlete.Value.StartPos);
                     ;
-                    evt.Attemps = attemptsTemp.SelectMany(
+                    evt.Attempts = attemptsTemp.SelectMany(
                                     at => at.Intermediate.Result.ToCharArray()
                                         .Select((c, i) => new { c, i }),
                                     (e, a) =>
@@ -176,8 +250,11 @@ namespace TrackAndFieldResults.Common
                                         return att;
                                     })
                                     .OrderBy(a => a.Height)
-                                    .ThenBy(a => a.Number).ToArray();
-                                    //.ThenBy(a => a.Athlete.StartPos);
+                                    .ThenBy(a => a.Number)
+                                    .ToArray();
+
+                    // Startorder wird sich nicht verändern im Wettkampf
+                    evt.Startorders = GetStarlist(evtDetails.Startlist);
                 }
                 if (evt.Type == Type.Width)
                 {
@@ -185,10 +262,8 @@ namespace TrackAndFieldResults.Common
                     evtDetails.AttemptSeparators = evtDetails.AttemptSeparators == null ?
                         Array.Empty<int>() : evtDetails.AttemptSeparators;
 
-                    //if(evt.Status == EventStatus.Unknown) { return evt; }
-
                     var startlist = evtDetails.Startlist;
-                    evt.Attemps = evtDetails.CompetitorDetails.SelectMany(
+                    evt.Attempts = evtDetails.CompetitorDetails.SelectMany(
                         d => d.Value.Intermediate,
                         (a, i) =>
                         {
@@ -200,11 +275,68 @@ namespace TrackAndFieldResults.Common
                             dto.Athlete.Key, evt.Type))
                         .ToArray();
 
+                    // für die Startlisten gilt:
+                    if (evt.Status == EventStatus.Pending && 
+                        (evt.Status == EventStatus.Started && evt.Attempts.Max(a => a.Number) - 1 < evt.AttemptSeparators[1]))
+                    {
+                        // - vorher: Startlist[0] gültig
+                        // - bis zur ersten Umsortierung:  Startlist[0] gültig
+                        evt.Startorders = GetStarlist(evtDetails.Startlist);
+                        
+                    }
+                    if(evt.Status == EventStatus.Unknown || 
+                        (evt.Status == EventStatus.Started && evt.Attempts.Max(a => a.Number) - 1 >= evt.AttemptSeparators[1])) 
+                    {
+                        // -danach bis zum Ende: keine gültig
+                        return evt; 
+                    }
+                    if (evt.Status != EventStatus.Finished)
+                    {
+                        // - danach: genau genommen, gar keine Startlisten gültig
+                        // da bei weitengleichheit die erste Startpos benötigt wird.
+                        return evt;
+                    }
                 }
-                // Läufe haben keine Startlisten
+                if (evt.Type == Type.Run)
+                {
+                    //evtDetails.Startlist != null
+                    // Startorder ist Bahneinteilung im Lauf oder Aufstellungsposition bei
+                    // längeren Läufen > 1500m
+                    evt.Startorders = GetStarlist(evtDetails.Startlist);
+                }
                 return evt;
             }
+            
+
             return evt;
         }
+
+        private static SortedDictionary<string, int>[] GetStarlist(Dictionary<string, StartlistEntry> entries)
+        {
+            SortedDictionary<string, int>[] res = [new SortedDictionary<string, int>()];
+            res[0] = new SortedDictionary<string, int>(entries
+                            .Select(sl => new { i = sl.Value.ListIndex + 1, Key = sl.Key })
+                            .ToDictionary(p => p.Key, p => p.i));
+            return res;
+        }
+    }
+
+    public class WidthSortKey
+    {
+        public WidthSortKey(decimal Result, int PositionStart, int PositionResult, string AthleteId)
+        {
+            this.Result = Result;
+            this.PositionStart = PositionStart;
+            this.PositionResult = PositionResult;
+            this.AthleteId = AthleteId;
+            this.Positions.Add(PositionStart);
+        }
+
+        public decimal Result { get; }
+        public int PositionStart { get; }
+        public int PositionResult { get; }
+        public string AthleteId { get; }
+
+        public List<int> Positions = new List<int>();
     }
 }
