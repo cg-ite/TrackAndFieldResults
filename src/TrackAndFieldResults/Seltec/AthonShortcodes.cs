@@ -38,6 +38,7 @@ namespace TrackAndFieldResults.Seltec
         /// 100m Hürden
         /// </summary>
         public const string Hurdles100 = "10H";
+        public const string Hurdles400 = "40H";
         /// <summary>
         /// 60m Hürden
         /// </summary>
@@ -58,6 +59,7 @@ namespace TrackAndFieldResults.Seltec
         /// 200m Sprint
         /// </summary>
         public const string Running200 = "200";
+        public const string Running300 = "300";
 
         /// <summary>
         /// 400m Sprint
@@ -67,11 +69,24 @@ namespace TrackAndFieldResults.Seltec
         /// 800m Mittelstrecke
         /// </summary>
         public const string Running800 = "800";
+        public const string Running1000 = "1K0";
 
         /// <summary>
         /// 1500m Mittelstrecke
         /// </summary>
-        public const string Running1500 = "1k5";
+        public const string Running1500 = "1K5";
+        public const string Running3000 = "3K0";
+        public const string Running5000 = "5K0";
+        public const string Running10000 = "10k";
+
+        public const string Walking3000 = "3W";
+        public const string Walking5000 = "5W";
+
+        public const string Relay4x100 = "4X1";
+        public const string Relay4x200 = "4X2";
+        public const string Relay4x400 = "4X4";
+        public const string Relay3x800 = "3X8";
+        public const string Relay3x1000 = "3X1";
         /// <summary>
         /// Siebenkampf
         /// </summary>

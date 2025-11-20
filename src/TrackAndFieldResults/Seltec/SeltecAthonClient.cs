@@ -33,6 +33,10 @@ namespace TrackAndFieldResults.Seltec
         /// <param name="fileName"></param>
         public void SaveResponseText(string fileName)
         {
+            if(ReadResponseAsString == false)
+            {
+                throw new InvalidOperationException("ReadResponseAsString is false, there is no content to be written. Set ReadResponseAsString to true and repeate");
+            }
             using (var fs = new StreamWriter(fileName,
                     false, Encoding.UTF8))
             {
@@ -40,10 +44,16 @@ namespace TrackAndFieldResults.Seltec
             }
         }
 
-        //public async Task<CompetitionsRoot> CompetitionsAsync(string fullname)
-        //{
+        public async Task<AthonCompetitionItem[]> GetCompetitionsAsync(int year)
+        {
+            // taf sind wohl die Meisterschaften und größere Sportfeste
+            var container = await GetCompetitionsIndexListAsync(DateTime.Now.Year, true, false);
+            var json = new System.IO.StreamReader(container.Stream).ReadToEnd();
+            var events = System.Text.Json.JsonSerializer.Deserialize<AthonCompetitionItem[]>(json);
             
-        //}
+            // es gibt auch zukünftige Wettkäpfe in der Liste
+            return events.OrderByDescending(e => e.StartDate).ToArray();
+        }
 
         /// <summary>
         /// This overrides the generated method to set the response text
