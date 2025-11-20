@@ -12,8 +12,8 @@ namespace TrackAndFieldResults.Common
     {
         public string BaseUrl { get; set; }
 
-        public Task<Competition[]> GetCompetitionsAsync(CancellationToken cancellationToken);
-        public Task<Competition[]> GetCompetitionsAsync();
+        public Task<Competition[]> GetCompetitionsAsync(int year, CancellationToken cancellationToken);
+        public Task<Competition[]> GetCompetitionsAsync(int year);
         
         public Task<Competition> GetCompetitionDetailsAsync(string competitionKey, CancellationToken cancellationToken);
         public Task<Competition> GetCompetitionDetailsAsync(string competitionKey);

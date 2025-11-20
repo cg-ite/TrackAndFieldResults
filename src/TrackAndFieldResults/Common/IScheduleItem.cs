@@ -15,7 +15,6 @@ namespace TrackAndFieldResults.Common
         long CompetitionId { get; set; }
         DateTime? StartDate { get; set; }
         DateTime? EndDate { get; set; }
-        string Longname { get; set; }
         /// <summary>
         /// Provider specific ID of this event
         /// </summary>
@@ -25,7 +24,7 @@ namespace TrackAndFieldResults.Common
         /// </summary>
         Type Type { get; set; }
         /// <summary>
-        /// Lauf Nr, Finale (bei Sprüngen oder Würfen) oder Lauf Nr/Gruppe bei
+        /// Lauf Nr, Finale (bei Sprüngen oder Würfen) oder Lauf Nr/Riege bei
         /// Mehrkämpfen (Sprüngen oder Würfen)
         /// </summary>
         string Unit { get; set; }
@@ -34,6 +33,9 @@ namespace TrackAndFieldResults.Common
         /// oder Disziplin innerhalb des Mehrkampfes
         /// </summary>
         string Phase { get; set; }
+        /// <summary>
+        /// Name des Events
+        /// </summary>
         string Name { get; set; }
 
         string ToString();

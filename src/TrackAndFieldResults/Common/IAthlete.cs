@@ -14,6 +14,13 @@ namespace TrackAndFieldResults.Common
     public interface IAthlete
     {
         /// <summary>
+        /// Id of the provider inside the document or the database
+        /// </summary>
+        public string Id { get; set; }
+
+        public string WorldathleticsId { get; set; }
+
+        /// <summary>
         /// National Id of the Athlete
         /// </summary>
         string NationalId { get; set; }

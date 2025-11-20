@@ -82,7 +82,7 @@ namespace TrackAndFieldResults.Common
                 FromAge = 23, ToAge = 29,
             }
             };
-        public static Agegroup All(string shortcode)
+        public static Agegroup First(string shortcode)
         {
             return all.First(all => all.Shortcode == shortcode);
         }

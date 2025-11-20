@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using TrackAndFieldResults.Omega;
+using TrackAndFieldResults.Seltec;
 
 namespace TrackAndFieldResults.Common
 {
@@ -48,7 +49,6 @@ namespace TrackAndFieldResults.Common
         /// Versuchsnummern nach den neu sortiert wird
         /// </summary>
         public int[] AttemptSeparators { get; set; }
-        public ICollection<IEntry> Entries { get; set; }
         /// <summary>
         /// Ein bis vier Startlisten, ja nach Disziplin und Modus
         /// Bei technischen Disziplinen 2-4, durch Neusortierung nach den
@@ -148,13 +148,19 @@ namespace TrackAndFieldResults.Common
         /// Bester Versuch von jedem Athleten, das beste Ergebnis.
         /// Die Ergebnisliste
         /// </summary>
-        public IPerformance[] Results { get; set; }
+        public Attempt[] Results { get; set; }
         public Athlete[] Athletes { get; set; }
         public override string ToString()
         {
-            return $"{Longname} - {Agegroups.First().Shortcode} {Unit}";
+            return $"{Name} - {Agegroups.First().Shortcode} {Unit}";
         }
 
+        /// <summary>
+        /// Konvertierung von einem Omega Event
+        /// </summary>
+        /// <param name="eventDetails"></param>
+        /// <param name="language"></param>
+        /// <returns></returns>
         public static Event FromEventDetails(IEventDetails eventDetails, string language = "de")
         {
             var name = eventDetails.EventName;
@@ -186,12 +192,11 @@ namespace TrackAndFieldResults.Common
             // bei deutschen und Ratingen gibt es nur eine AK
             var evt = new Event()
             {
-                Longname = $"{name} {phaseName} {unitName}",
                 StartDate = eventDetails.StartTime.ToDateTime(),
                 EndDate = eventDetails.EndTime.ToDateTime(),
                 Agegroups = eventDetails.Rsc.Gender.ToUpper() == "W" ?
-                    [GerAgegroups.All("W")] :
-                    [GerAgegroups.All("M")],
+                    [GerAgegroups.First("W")] :
+                    [GerAgegroups.First("M")],
                 ProviderId = eventDetails.Rsc.ValueUnit,
                 Unit = unitName,
                 Phase = phaseName,
@@ -209,6 +214,7 @@ namespace TrackAndFieldResults.Common
                 // Athleten
                 evt.Athletes = evtDetails.CompetitorDetails.
                     Select(c => Athlete.FromAthlete(c.Value)).ToArray();
+                
 
                 // Nur technische Disziplinen haben Startlisten und Versuche
 
@@ -255,6 +261,12 @@ namespace TrackAndFieldResults.Common
 
                     // Startorder wird sich nicht verändern im Wettkampf
                     evt.Startorders = GetStarlist(evtDetails.Startlist);
+                    evt.Results = evt.Attempts.OrderBy(a => a.Height)
+                        .Where(a => a.IsBest.HasValue && a.IsBest.Value)
+                        .GroupBy(a => a.AthleteId)
+                        .Select(ak => ak.Last())    // höchste Höhe auswählen
+                        .OrderByDescending(a => a.Height)
+                        .ToArray();
                 }
                 if (evt.Type == Type.Width)
                 {
@@ -296,12 +308,17 @@ namespace TrackAndFieldResults.Common
                         // da bei weitengleichheit die erste Startpos benötigt wird.
                         return evt;
                     }
+                    evt.Results = evt.Attempts.Where(a => a.IsBest.HasValue && a.IsBest.Value)
+                        .OrderByDescending(a => a.Result).ToArray() ;
                 }
                 if (evt.Type == Type.Run)
                 {
                     //evtDetails.Startlist != null
                     // Startorder ist Bahneinteilung im Lauf oder Aufstellungsposition bei
                     // längeren Läufen > 1500m
+                    evt.Results = evtDetails.CompetitorDetails.Select(a => Attempt
+                        .FromCompetitor(a.Value, evt.Type, eventDetails.Stats.Wind))
+                        .OrderBy(a => a.Result).ToArray();
                     evt.Startorders = GetStarlist(evtDetails.Startlist);
                 }
                 return evt;
@@ -311,6 +328,64 @@ namespace TrackAndFieldResults.Common
             return evt;
         }
 
+        public static Event FromEventDetails(AthonEvent eventDetails, AthonEntry entry)
+        {
+            var evt = new Event()
+            {
+                Agegroups = eventDetails.Agegroups.Select(a => GerAgegroups.First(a.Shortcode)).ToArray(),
+                StartDate = entry.HeatDateTime.Value.Date,
+                ProviderId = $"{eventDetails.Id}-{entry.RoundType}-{entry.Heat}",
+                Phase = entry.RoundType.ToString(),
+                Name = eventDetails.Longname,
+                Type = FromShortcode(eventDetails.Shortcode)
+            };
+            evt.Unit = evt.Type >= Type.Run ? $"Lauf {entry.Heat}" : "";
+            return evt;
+        }
+
+        // TODO: hier fehlt eigentlich noch der Mehrkampf-Type?
+
+        /// <summary>
+        /// Konvertiert einen AthonShortcode in den Common Type
+        /// </summary>
+        /// <param name="shortcode"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        private static Type FromShortcode(string shortcode) =>
+            shortcode switch
+            {
+                AthonShortcode.DiscusThrow => Type.Width,
+                AthonShortcode.Shortput => Type.Width,
+                AthonShortcode.JavelinThrow => Type.Width,
+                AthonShortcode.HammerThrow => Type.Width,
+                AthonShortcode.Longjump => Type.Width,
+                AthonShortcode.Triplejump => Type.Width,
+                AthonShortcode.Polevault => Type.Height,
+                AthonShortcode.Highjump => Type.Height,
+                AthonShortcode.Hurdles60 => Type.Run,
+                AthonShortcode.Hurdles100 => Type.Run,
+                AthonShortcode.Hurdles110 => Type.Run,
+                AthonShortcode.Hurdles400 => Type.Run,
+                AthonShortcode.Running60 => Type.Run,
+                AthonShortcode.Running100 => Type.Run,
+                AthonShortcode.Running200 => Type.Run,
+                AthonShortcode.Running300 => Type.Run,
+                AthonShortcode.Running400 => Type.Run,
+                AthonShortcode.Running800 => Type.Run,
+                AthonShortcode.Running1000 => Type.Run,
+                AthonShortcode.Running1500 => Type.Run,
+                AthonShortcode.Running3000 => Type.Run,
+                AthonShortcode.Running5000 => Type.Run,
+                AthonShortcode.Running10000 => Type.Run,
+                AthonShortcode.Walking3000 => Type.Run,
+                AthonShortcode.Walking5000 => Type.Run,
+                AthonShortcode.Relay3x800 => Type.Relay,
+                AthonShortcode.Relay3x1000 => Type.Relay,
+                AthonShortcode.Relay4x100 => Type.Relay,
+                AthonShortcode.Relay4x200 => Type.Relay,
+                AthonShortcode.Relay4x400 => Type.Relay,
+                _ => throw new ArgumentOutOfRangeException(nameof(Type), $"Der Shortcode '{shortcode}' ist unbekannt und es kann ihm kein Type zugeordnet werden."),
+            };
         private static SortedDictionary<string, int>[] GetStarlist(Dictionary<string, StartlistEntry> entries)
         {
             SortedDictionary<string, int>[] res = [new SortedDictionary<string, int>()];

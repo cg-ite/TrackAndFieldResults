@@ -10,7 +10,11 @@ namespace TrackAndFieldResults.Common
     /// </summary>
     public interface IEvent
     {
-        /// <summary>List of entries/w results inside this event</summary>
-        ICollection<IEntry> Entries { get; set; }
+        public int[] AttemptSeparators { get; set; }
+        public SortedDictionary<string, int>[] Startorders { get; set; }
+        public EventStatus Status { get; }
+        public Attempt[] Attempts { get; set; }
+        public Attempt[] Results { get; set; }
+        public Athlete[] Athletes { get; set; }
     }
 }

@@ -3,7 +3,9 @@
  * SPDX - License - Identifier: GPL - 3.0 - or - later
  * code was sent as patch, no public git repo available
  */
+using System.Reflection.Metadata.Ecma335;
 using TrackAndFieldResults.Omega;
+using TrackAndFieldResults.Seltec;
 
 namespace TrackAndFieldResults.Common
 {
@@ -16,14 +18,11 @@ namespace TrackAndFieldResults.Common
         public long CompetitionId { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-        public string Longname { get; set; }
         public string ProviderId { get; set; }
 
+        public string Longname => $"{Name} {Phase} {Unit}";
         public Type Type { get; set; }
 
-        /// <summary>
-        /// 
-        /// </summary>
         public string Unit { get; set; }
         public string Phase { get; set; }
         public string Name { get; set; }
@@ -37,7 +36,18 @@ namespace TrackAndFieldResults.Common
         {
             return (ScheduleItem)Event.FromEventDetails(evt, language);
         }
+        public static ScheduleItem[] FromEventDetails(AthonEvent eventDetails)
+        {
+            // evt hat in entries alle phasen in einem Array
+            var heats = eventDetails.Entries.Where(e=> e.Heat != null).GroupBy(e => new { e.RoundType, e.Heat }, evt => evt)
+                .OrderBy(ev => ev.Key.Heat)
+                .OrderBy(ev => ev.Key.RoundType);
+            return heats.Select(e => (ScheduleItem)Event.FromEventDetails(eventDetails, e.First())).ToArray();
+        }
+
+
     }
+
 
     public static class CommonExtentions
     {
@@ -68,9 +78,9 @@ namespace TrackAndFieldResults.Common
 
     public enum Type
     {
-        Run,
         Height,
         Width, 
+        Run,
         Relay
     }
 }

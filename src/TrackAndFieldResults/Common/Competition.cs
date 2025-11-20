@@ -30,6 +30,7 @@ namespace TrackAndFieldResults.Common
         public ProviderId ResultProviderId { get ; set ; }
 
         public ScheduleItem[] Schedule {  get ; set ; }
+
     }
 
 }

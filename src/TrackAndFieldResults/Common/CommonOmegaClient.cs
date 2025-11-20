@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Xml.Linq;
+﻿using TrackAndFieldResults.Atos;
 using TrackAndFieldResults.Omega;
 using TrackAndFieldResults.Utils;
 
@@ -14,16 +8,10 @@ namespace TrackAndFieldResults.Common
     {
         private OmegaClient _client;
 
-        public CommonOmegaClient() {
+        public CommonOmegaClient(HttpClient httpClient) {
             // last known url 2025-10
             BaseUrl = "https://ps-cache.web.swisstiming.com";
             
-            HttpClient httpClient = new();
-            httpClient.DefaultRequestHeaders.Add("Accept", "text/json");
-            var version = new Random(2783763).Next(100, 140);
-            httpClient.DefaultRequestHeaders.Add("User-Agent",
-                $"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/{version}.0");
-
             _client = new OmegaClient(httpClient);
             _client.BaseUrl = BaseUrl;
             _client.ReadResponseAsString = true;    //for saving response to file
@@ -44,22 +32,36 @@ namespace TrackAndFieldResults.Common
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task<Competition[]> GetCompetitionsAsync(CancellationToken cancellationToken)
+        public async Task<Competition[]> GetCompetitionsAsync(int year, CancellationToken cancellationToken)
         {
             var comps = await _client.GetCompetitionsAsync();
             var events = comps.Content.Full.Eventgroups.Values.SelectMany(eg =>
                 eg.Events);
-
-            var res = events.OrderBy(e=> e.Key).Select((e, i) => new Competition()
+            if (year > 2015)
             {
-                ProviderId = e.Key,
-                ResultProviderId = ProviderId.Omega,
-                Name = GetName(e.Key),
-                StartDate = GetStartdate(e.Key),
-                Id = i,
-            });
-
-            return res.ToArray();
+                var res = events.OrderBy(e => e.Key).Select((e, i) => new Competition()
+                {
+                    ProviderId = e.Key,
+                    ResultProviderId = ProviderId.Omega,
+                    Name = GetName(e.Key),
+                    StartDate = GetStartdate(e.Key),
+                    Id = i,
+                }).Where(c => c.StartDate.Year == year);
+                return res.ToArray();
+            }
+            else
+            {
+                var res = events.OrderBy(e => e.Key).Select((e, i) => new Competition()
+                {
+                    ProviderId = e.Key,
+                    ResultProviderId = ProviderId.Omega,
+                    Name = GetName(e.Key),
+                    StartDate = GetStartdate(e.Key),
+                    Id = i,
+                });
+                return res.ToArray();
+            }
+            
         }
 
         /// <summary>
@@ -91,9 +93,9 @@ namespace TrackAndFieldResults.Common
             return new DateTime(1,1,1);
         }
 
-        public Task<Competition[]> GetCompetitionsAsync()
+        public Task<Competition[]> GetCompetitionsAsync(int year)
         {
-            return GetCompetitionsAsync(System.Threading.CancellationToken.None);
+            return GetCompetitionsAsync(year, System.Threading.CancellationToken.None);
         }
 
         public async Task<Competition> GetCompetitionDetailsAsync(string competitionKey, CancellationToken cancellationToken)
@@ -125,7 +127,7 @@ namespace TrackAndFieldResults.Common
                 .OrderBy(u => u.Rsc.ValuePhase);
                 //.GroupBy(u => u.Rsc.ValuePhase);
                 var events = eventGrps.Select(g => ScheduleItem.FromEventDetails(g))
-                    .OrderBy(e => e.Longname)
+                    .OrderBy(e => e.Name)
                     .ToArray();
 
                 res.Schedule = events;
@@ -167,5 +169,6 @@ namespace TrackAndFieldResults.Common
         {
             return GetEventDetailsAsync(competitionKey, eventKey, CancellationToken.None);
         }
+
     }
 }

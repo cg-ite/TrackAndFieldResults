@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <Compile Remove="Common\CodyApi.cs" />
+    <Compile Remove="Common\IEntry.cs" />
+    <Compile Remove="Common\IPerformance.cs" />
     <Compile Remove="Omega\ClientNswag.cs" />
     <Compile Remove="Omega\OmegaAttemptEntry.cs" />
     <Compile Remove="Omega\OmegaExtensions.cs" />
