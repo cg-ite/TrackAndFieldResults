@@ -22,6 +22,7 @@
   Bei Vertikal-Sprügen kann sie vorher und nachher abgerufen werden.
 - Die Startlist bei Läufen enthält die Bahn des Laufes. Bei Läufen ohne Bahnen > 1500m ist 
   trotzdem eine Startreihenfolge (Aufstellung an Linie) gesetzt
+- In stats steht auch der milisekunden Anteil der Leistung bei Läufen
   
 ## Fragen zur Implementation
 - Startlist index bei 1 oder 0 beginnen?

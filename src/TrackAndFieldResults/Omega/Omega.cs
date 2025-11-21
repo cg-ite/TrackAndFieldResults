@@ -115,6 +115,15 @@ namespace TrackAndFieldResults.Omega
         /// </summary>
         [JsonPropertyName("Result")]
         public string Result { get; set; }
+        /// <summary>
+        /// The fraction of a second in track events, which 
+        /// the athlete is behind the winner
+        /// </summary>
+        public string Behind { get; set; }
+        /// <summary>
+        /// Values: "False" and "True"
+        /// </summary>
+        public string Winner { get; set; }
 
         public override string ToString()
         {
@@ -349,6 +358,7 @@ namespace TrackAndFieldResults.Omega
 
         [JsonPropertyName("RecCode")]
         public string RecCode { get; set; }
+        public string React { get; set; }
 
         [JsonPropertyName("Row")]
         public string Row { get; set; }
@@ -367,6 +377,11 @@ namespace TrackAndFieldResults.Omega
 
         [JsonPropertyName("ResultAlt")]
         public string ResultAlt { get; set; }
+        /// <summary>
+        /// Millisekunden-Anteil des Ergebnisses
+        /// </summary>
+        [JsonPropertyName("ResultMS")]
+        public string ResultMs { get; set; }
 
         [JsonPropertyName("SB")]
         public string SB { get; set; }
