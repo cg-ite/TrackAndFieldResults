@@ -3,6 +3,7 @@
  * SPDX - License - Identifier: GPL - 3.0 - or - later
  * code was sent as patch, no public git repo available
  */
+using System.Globalization;
 using TrackAndFieldResults.Common;
 using TrackAndFieldResults.Omega;
 using TrackAndFieldResults.Seltec;
@@ -39,7 +40,11 @@ namespace TrackAndFieldResults.Common
         /// </summary>
         public string FormattedResult()
         {
-            if(Type == Type.Height) { return ResultRaw; }
+            if (Type == Type.Height) { return ResultRaw; }
+            if (Status == AttemptStatus.Invalid) { return "x"; }
+            if (Status == AttemptStatus.Passed) { return "-"; }
+            if (Status == AttemptStatus.Disqualified) { return "disq."; }
+            if (Status == AttemptStatus.Canceled) { return "n.a."; }
             if (Result.HasValue == false) { return ""; }
             return Result.Value.ToString("0.00");
         }
@@ -58,22 +63,9 @@ namespace TrackAndFieldResults.Common
         public DateTimeOffset? StartTime { get; set; }
         public bool? IsBest { get; set; }
         /// <summary>
-        /// Versuch ungültig
+        /// Status eines technischen Versuchs: gültig, ungültig, ausgelassen, ...
         /// </summary>
-        public bool IsInvalid { get; set; } = true;
-        /// <summary>
-        /// Versuch ausgelassen
-        /// </summary>
-        public bool IsPassed { get; set; }
-        /// <summary>
-        /// Athlet hat sich vor Wettkampf abgemeldet
-        /// </summary>
-        public bool IsCanceled { get; set; }
-        /// <summary>
-        /// Athlet wurde disqualifiziert
-        /// </summary>
-        public bool IsDisqualified { get; set; }
-
+        public AttemptStatus Status { get; set; }
         /// <summary>
         /// Bei Weit, Wurf:6.34, Bei Hoch: xo-, 
         /// bei Lauf: 3:23,21
@@ -83,6 +75,8 @@ namespace TrackAndFieldResults.Common
         /// Typ des Ergebnisses
         /// </summary>
         public Type Type { get; set; }
+        private decimal? _result;
+
         /// <summary>
         /// Ergebnis zum Rechnen, für die Darstellung funktioniert
         /// FormatedResult.
@@ -91,8 +85,33 @@ namespace TrackAndFieldResults.Common
         /// Würfe: Weite in m
         /// Läufe: Zeit in sec
         /// </summary>
-        public decimal? Result { get; set; }
-        public string ResultRaw { get; set; }
+        public decimal? Result
+        {
+            get => _result; set
+            {
+                _result = value;
+                if (_result != null) { Status = AttemptStatus.Valid; }
+            }
+        }
+        private string _resultRaw = string.Empty;
+        public string ResultRaw
+        {
+            get => _resultRaw; set
+            {
+                Status = value.ToLower() switch
+                {
+                    "x" => AttemptStatus.Invalid,
+                    "-" => AttemptStatus.Passed,
+                    "o" => AttemptStatus.Valid,
+                    _ => AttemptStatus.Unknown,
+                };
+                Status = value.ToLower().Contains("dis") ? AttemptStatus.Disqualified : Status;
+                IsBest = value.ToLower() == "o";    // für vertikalsprünge: best der Höhe
+                if (_result != null) { Status = AttemptStatus.Valid; }  // damit Reihenfolgen  von result und resultraw keine rolle spielt
+                _resultRaw = value;
+            }
+        }
+
         public decimal? Height { get; internal set; }
 
         public static Attempt FromIntermediate(Intermediate intermediate, string athleteId,
@@ -110,32 +129,27 @@ namespace TrackAndFieldResults.Common
                 throw new InvalidOperationException("Events of type 'Run' or 'Relay' don't have attempts.");
             }
 
-            attempt.IsInvalid = attempt.ResultRaw.ToLower() == "x";
-            attempt.IsPassed = attempt.ResultRaw.ToLower() == "-";
-            attempt.IsBest = attempt.ResultRaw.ToLower() == "o";
-            attempt.IsDisqualified = attempt.ResultRaw.ToLower().Contains("disq");
             // alles andere sind Weiten/Höhen m
             // hier fehlt noch verzichtet, ungültig, disq
-            if (decimal.TryParse(attempt.ResultRaw, out decimal res))
-            {
-                attempt.Result = res;
-
-            }
-
-            if (Decimal.TryParse(intermediate.Wind, out decimal wind))
-            {
-                attempt.Wind = wind;
-            }
-            if (Decimal.TryParse(intermediate.Behind, out decimal behind))
-            {
-                attempt.Behind = behind;
-            }
+            attempt.Result = TryParseString(attempt.ResultRaw);
+            attempt.Wind = TryParseString(intermediate.Wind);
+            attempt.Behind = TryParseString(intermediate.Behind);
             if (intermediate.Flag != null)
             {
                 attempt.IsBest = intermediate.Flag == "1";
             }
 
             return attempt;
+        }
+
+        private static decimal? TryParseString(string str)
+        {
+            if (str == null) return null;
+            if (Decimal.TryParse(str.Replace(",", "."), NumberStyles.Number, CultureInfo.InvariantCulture, out decimal behind))
+            {
+                return behind;
+            }
+            return null;
         }
 
         /// <summary>
@@ -160,33 +174,17 @@ namespace TrackAndFieldResults.Common
             }
 
             attempt.ResultRaw = athlete.Result;
-            
-            var attempts = new List<Attempt>();
-            attempt.IsInvalid = attempt.ResultRaw.ToLower() == "x";
-            attempt.IsPassed = attempt.ResultRaw.ToLower() == "-";
-            attempt.IsDisqualified = attempt.ResultRaw.ToLower().Contains("disq");
             // alles andere sind Weiten/Höhen m
             // hier fehlt noch verzichtet, ungültig, disq
-            if (decimal.TryParse(attempt.ResultRaw, out decimal res))
-            {
-                attempt.Result = res;
+            attempt.Result = TryParseString(attempt.ResultRaw);
+            attempt.Wind = TryParseString(windRaw);
+            attempt.Behind = TryParseString(athlete.Behind);
 
-            }
-
-            if (Decimal.TryParse(windRaw, out decimal wind))
-            {
-                attempt.Wind = wind;
-            }
-            if (Decimal.TryParse(athlete.Behind, out decimal behind))
-            {
-                attempt.Behind = behind;
-            }
-            
             return attempt;
         }
 
-        
-        
+
+
         public static Attempt FromIntermediate(AthonPerformance intermediate, string athletId,
             Type type)
         {
@@ -203,18 +201,10 @@ namespace TrackAndFieldResults.Common
             //}
 
             var attempts = new List<Attempt>();
-            attempt.IsCanceled = attempt.ResultRaw.ToLower() == "can";
-            attempt.IsInvalid = attempt.ResultRaw.ToLower() == "x";
-            attempt.IsPassed = attempt.ResultRaw.ToLower() == "-";
-            attempt.IsDisqualified = attempt.ResultRaw.ToLower().Contains("dis");
+
             // alles andere sind Weiten/Höhen m
             // hier fehlt noch verzichtet, ungültig, disq
-            if (decimal.TryParse(attempt.ResultRaw, out decimal res))
-            {
-                attempt.Result = res;
-
-            }
-
+            attempt.Result = TryParseString(attempt.ResultRaw);
             if (intermediate.Wind.HasValue)
             {
                 attempt.Wind = intermediate.Wind.Value;
@@ -232,6 +222,15 @@ namespace TrackAndFieldResults.Common
             return attempt;
         }
 
-        
+
+    }
+    public enum AttemptStatus
+    {
+        Unknown,
+        Valid,
+        Invalid,
+        Passed,     //ausgelassen
+        Disqualified,
+        Canceled    // ?
     }
 }

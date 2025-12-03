@@ -46,7 +46,7 @@ namespace TrackAndFieldResults.Common
                     Name = GetName(e.Key),
                     StartDate = GetStartdate(e.Key),
                     Id = i,
-                }).Where(c => c.StartDate.Year == year);
+                }).Where(c => c.StartDate.Year >= year);
                 return res.ToArray();
             }
             else

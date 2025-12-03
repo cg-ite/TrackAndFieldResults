@@ -48,7 +48,7 @@ namespace TrackAndFieldResults.Common
         /// <summary>
         /// Versuchsnummern nach den neu sortiert wird
         /// </summary>
-        public int[] AttemptSeparators { get; set; }
+        public int[] AttemptSeparators { get; set; } = new int[3];
         /// <summary>
         /// Ein bis vier Startlisten, ja nach Disziplin und Modus
         /// Bei technischen Disziplinen 2-4, durch Neusortierung nach den
@@ -73,20 +73,23 @@ namespace TrackAndFieldResults.Common
             }
 
             Startorders= startorders;
-            var keys = GetWidthKeys(Attempts, startorders);
+            // nur durchgeführte Ergebnisse
+            Attempt[] doneAttempts = Attempts.Where(a => a.Status == AttemptStatus.Valid || a.Status == AttemptStatus.Invalid)
+                .ToArray();
+            var keys = GetWidthKeys(doneAttempts, startorders);
             
             var res = new List<Attempt>();
             // MK ohne umsortieren
             if (AttemptSeparators.Length == 0)
             {
-                var vorkampf = Attempts
+                var vorkampf = doneAttempts
                     .OrderBy(a => a.Number)
                     .ThenBy(a => GetInitialStartposition(startorders, a.AthleteId));
                 res.AddRange(vorkampf); // Vorkampf
                 return res.ToArray();
             }
             // Standard: Weit, Kugel, ...; 3,5
-            var sorted = Attempts.Where(a => a.Number <= AttemptSeparators[0])
+            var sorted = doneAttempts.Where(a => a.Number <= AttemptSeparators[0])
                     .OrderBy(a => a.Number)
                     .ThenBy(a => GetInitialStartposition(startorders, a.AthleteId));
             res.AddRange(sorted); // Vorkampf
@@ -101,9 +104,10 @@ namespace TrackAndFieldResults.Common
             {
                 foreach (var p in endkampfPosition)
                 {
-                    res.Add(Attempts
+                    // sollte nur ein Versuch sein; kann aber auch leer sein, falls verletzt
+                    res.AddRange(doneAttempts
                         .Where(a => a.Number == AttemptSeparators[0] + i + 1 &&
-                        a.AthleteId == p.AthleteId).First());
+                        a.AthleteId == p.AthleteId));
                 }
             }
 
@@ -115,9 +119,10 @@ namespace TrackAndFieldResults.Common
 
             foreach (var p in finale)
             {
-                res.Add(Attempts
+                // sollte nur ein Versuch sein; kann aber auch leer sein, falls verletzt
+                res.AddRange(doneAttempts
                     .Where(a => a.Number == AttemptSeparators[1] + 1 &&
-                    a.AthleteId == p.AthleteId).First());
+                    a.AthleteId == p.AthleteId));
             }
             return res.ToArray();
         }
@@ -131,9 +136,10 @@ namespace TrackAndFieldResults.Common
         public WidthSortKey[] GetWidthKeys(Attempt[] attempts,
             SortedDictionary<string, int>[] startorders)
         {
+            //Result wird hier null, ist aber richtig bei ungültigen sprüngen
             var widthkeys = attempts.Select(a =>
                 new WidthSortKey(
-                    a.Result.Value, 
+                    a.Result, 
                     GetInitialStartposition(startorders, a.AthleteId),
                     a.Number.Value, a.AthleteId));
             return widthkeys.ToArray();
@@ -271,7 +277,7 @@ namespace TrackAndFieldResults.Common
                 if (evt.Type == Type.Width)
                 {
                     // können null sein
-                    evtDetails.AttemptSeparators = evtDetails.AttemptSeparators == null ?
+                    evt.AttemptSeparators = evtDetails.AttemptSeparators == null ?
                         Array.Empty<int>() : evtDetails.AttemptSeparators;
 
                     var startlist = evtDetails.Startlist;
@@ -300,14 +306,15 @@ namespace TrackAndFieldResults.Common
                         (evt.Status == EventStatus.Started && evt.Attempts.Max(a => a.Number) - 1 >= evt.AttemptSeparators[1])) 
                     {
                         // -danach bis zum Ende: keine gültig
-                        return evt; 
+                        //return evt; 
                     }
                     if (evt.Status != EventStatus.Finished)
                     {
                         // - danach: genau genommen, gar keine Startlisten gültig
                         // da bei weitengleichheit die erste Startpos benötigt wird.
-                        return evt;
+                        //return evt;
                     }
+                    evt.Startorders = GetStarlist(evtDetails.Startlist);
                     evt.Results = evt.Attempts.Where(a => a.IsBest.HasValue && a.IsBest.Value)
                         .OrderByDescending(a => a.Result).ToArray() ;
                 }
@@ -337,7 +344,10 @@ namespace TrackAndFieldResults.Common
                 ProviderId = $"{eventDetails.Id}-{entry.RoundType}-{entry.Heat}",
                 Phase = entry.RoundType.ToString(),
                 Name = eventDetails.Longname,
-                Type = FromShortcode(eventDetails.Shortcode)
+                Type = FromShortcode(eventDetails.Shortcode),
+                Startorders = GetStarlist(eventDetails.Entries),
+                AttemptSeparators = [3]     // Standard, Jugend-DM und Mehrkampf (da nur 3)
+                
             };
             evt.Unit = evt.Type >= Type.Run ? $"Lauf {entry.Heat}" : "";
             return evt;
@@ -386,6 +396,8 @@ namespace TrackAndFieldResults.Common
                 AthonShortcode.Relay4x400 => Type.Relay,
                 _ => throw new ArgumentOutOfRangeException(nameof(Type), $"Der Shortcode '{shortcode}' ist unbekannt und es kann ihm kein Type zugeordnet werden."),
             };
+
+
         private static SortedDictionary<string, int>[] GetStarlist(Dictionary<string, StartlistEntry> entries)
         {
             SortedDictionary<string, int>[] res = [new SortedDictionary<string, int>()];
@@ -394,13 +406,22 @@ namespace TrackAndFieldResults.Common
                             .ToDictionary(p => p.Key, p => p.i));
             return res;
         }
+        private static SortedDictionary<string, int>[] GetStarlist(IEnumerable<AthonEntry> entries)
+        {
+            SortedDictionary<string, int>[] res = [new SortedDictionary<string, int>()];
+            res[0] = new SortedDictionary<string, int>(entries
+                            .Where(e => e.Lane != null || e.Lane == "")
+                            .Select(sl => new { i = Convert.ToInt32(sl.Lane), Key = sl.CompetitorId })
+                            .ToDictionary(p => p.Key, p => p.i));
+            return res;
+        }
     }
 
     public class WidthSortKey
     {
-        public WidthSortKey(decimal Result, int PositionStart, int PositionResult, string AthleteId)
+        public WidthSortKey(decimal? Result, int PositionStart, int PositionResult, string AthleteId)
         {
-            this.Result = Result;
+            this.Result = Result.HasValue ? Result.Value : 0;
             this.PositionStart = PositionStart;
             this.PositionResult = PositionResult;
             this.AthleteId = AthleteId;

@@ -66,7 +66,7 @@ namespace TrackAndFieldResults.Common
         {
             if (_competitions.ContainsKey(competitionKey) == false)
             {
-                GetCompetitionDetailsAsync(competitionKey);
+                await GetCompetitionDetailsAsync(competitionKey);
             }
             var parts = eventKey.Split('-');
             var _competition = _competitions[competitionKey];
