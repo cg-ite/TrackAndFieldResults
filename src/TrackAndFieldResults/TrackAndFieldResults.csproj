@@ -4,8 +4,20 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  <PackageId>TrackAndFieldResults</PackageId>
+	  <Title>TrackAndField-Results</Title>
+	  <Description>Unified API for querying track and field results from different competition and athlete-centric data providers.</Description>
+	  <Version>0.2.0</Version>
+	  <Copyright>Christian Günther</Copyright>
+	  <Authors>Christian Günther</Authors>
+	  <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
+	<Target Name="PostBuild" AfterTargets="Pack">
+		<Exec Command="nuget add $(ProjectDir)bin\$(Configuration)\$(PackageId).$(PackageVersion).nupkg -source O:\OSPH\Nuget" />
+	</Target>
+	
   <ItemGroup>
     <Compile Remove="Common\CodyApi.cs" />
     <Compile Remove="Common\IEntry.cs" />

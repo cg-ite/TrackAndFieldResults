@@ -16,7 +16,7 @@
 
     public enum ProviderId
     {
-        Omega,
+        Omega=0,
         Seltec,
         Worldathletics,
         Atos

@@ -98,6 +98,11 @@ namespace TrackAndFieldResults.Common
         {
             get => _resultRaw; set
             {
+                if (value == null) {
+                    throw new ArgumentNullException(nameof(ResultRaw), "Das übergebene Result war null. Sollte nicht vorkommen.");
+                    Status = AttemptStatus.Unknown;
+                    return;
+                }
                 Status = value.ToLower() switch
                 {
                     "x" => AttemptStatus.Invalid,
@@ -193,7 +198,15 @@ namespace TrackAndFieldResults.Common
             attempt.Type = type;
             attempt.Number = intermediate.Attempt;
 
-            attempt.ResultRaw = intermediate.FormattedPerformance;
+            // formattedperformance nicht bei hoch- und Stab
+            if(type == Type.Height)
+            {
+                attempt.ResultRaw = intermediate.Detail;
+            }
+            else
+            {
+                attempt.ResultRaw = intermediate.FormattedPerformance;
+            }
             //// Zeiten können nicht direkt zu decimal geparst werden
             //if (attempt.Type == Type.Run || attempt.Type == Type.Relay)
             //{

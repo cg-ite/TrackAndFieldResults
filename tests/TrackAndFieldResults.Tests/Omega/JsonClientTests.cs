@@ -26,7 +26,7 @@ namespace TrackAndFieldResults.Tests.Omega
         {
             HttpClient httpClient = new();
             httpClient.DefaultRequestHeaders.Add("Accept", "text/json");
-            var version = new Random(2783763).Next(90, 135);
+            var version = new Random(2783763).Next(90, 140);
             httpClient.DefaultRequestHeaders.Add("User-Agent",
                 $"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/{version}.0");
 

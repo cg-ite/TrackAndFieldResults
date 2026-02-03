@@ -31,6 +31,11 @@ namespace TrackAndFieldResults.Common
 
         public ScheduleItem[] Schedule {  get ; set ; }
 
+        /// <summary>
+        /// Raw text of the server response for caching or writing
+        /// to a file
+        /// </summary>
+        public string ResponseText { get; set; }
     }
 
 }

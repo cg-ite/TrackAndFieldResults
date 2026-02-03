@@ -1,4 +1,8 @@
-﻿using TrackAndFieldResults.Atos;
+﻿/*
+ * SPDX - FileCopyrightText: Copyright © 2025 Christian Günther <cg-ite@gmx.de>
+ * SPDX - License - Identifier: GPL - 3.0 - or - later
+ */
+
 using TrackAndFieldResults.Omega;
 using TrackAndFieldResults.Utils;
 
@@ -9,14 +13,14 @@ namespace TrackAndFieldResults.Common
         private OmegaClient _client;
 
         public CommonOmegaClient(HttpClient httpClient) {
-            // last known url 2025-10
-            BaseUrl = "https://ps-cache.web.swisstiming.com";
-            
             _client = new OmegaClient(httpClient);
             _client.BaseUrl = BaseUrl;
             _client.ReadResponseAsString = true;    //for saving response to file
+
+            // last known url 2025-10
+            BaseUrl = "https://ps-cache.web.swisstiming.com";
         }
-        public string BaseUrl { get ; set ; }
+        public string BaseUrl { get => _client.BaseUrl; set => _client.BaseUrl = value; }
 
         /// <summary>
         /// Cached competitions to minimizing requests. Lazy loading competitiondetails, 

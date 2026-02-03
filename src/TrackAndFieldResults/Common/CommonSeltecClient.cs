@@ -11,15 +11,29 @@ namespace TrackAndFieldResults.Common
         {
             _client = new SeltecAthonClient(httpClient);
             _client.ReadResponseAsString = true;
+
+            BaseUrl = "https://ergebnisse.leichtathletik.de";
         }
 
-        public string BaseUrl { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public string BaseUrl { get => _client.BaseUrl; set => _client.BaseUrl = value; }
 
         public async Task<Competition> GetCompetitionDetailsAsync(string competitionKey, CancellationToken cancellationToken)
         {
-            var details = await _client.GetLegacyCompetitionByIdAsync(competitionKey);
-            var _competition = details.Competitions.First();
-            _competitions.Add(competitionKey, _competition);
+            //caching
+            AthonCompetition _competition;
+            string respose ="";
+            if (_competitions.ContainsKey(competitionKey))
+            {
+                _competition = _competitions[competitionKey];
+            }
+            else
+            {
+                var details = await _client.GetLegacyCompetitionByIdAsync(competitionKey);
+                _competition = details.Competitions.First();
+                _competitions.Add(competitionKey, _competition);
+                respose = _client.ResponseText;
+                _client.SaveResponseText($"./{competitionKey}.json");
+            }
             var res = new Competition()
             {
                 Name = _competition.Name,
@@ -29,6 +43,7 @@ namespace TrackAndFieldResults.Common
                 EndDate = _competition.End.Date,
                 Nation = _competition.Nation,
                 ResultProviderId = ProviderId.Seltec,
+                ResponseText = respose,
             };
             res.Schedule = _competition.Events.SelectMany(e => ScheduleItem.FromEventDetails(e)).ToArray();
             return res;
@@ -80,11 +95,11 @@ namespace TrackAndFieldResults.Common
             res.Athletes = GetAthletesByIds(competitionKey, entries.Select(e => e.CompetitorId)).ToArray();
 
             var results = new List<Attempt>();
-            foreach (var athlete in entries)
+            foreach (var entry in entries)
             {
-                results.AddRange(athlete.Attempts.Where(a => a.IsBest.HasValue && a.IsBest.Value)
+                results.AddRange(entry.Attempts.Where(a => a.IsBest.HasValue && a.IsBest.Value)
                     .Select(a => Attempt
-                        .FromIntermediate(a, athlete.Id, res.Type)).ToArray());
+                        .FromIntermediate(a, entry.CompetitorId, res.Type)).ToArray());
             }
             res.Results = results.ToArray();
 
@@ -95,11 +110,11 @@ namespace TrackAndFieldResults.Common
             else
             {
                 var attempts = new List<Attempt>();
-                foreach (var athlete in entries)
+                foreach (var entry in entries)
                 {
-                    attempts.AddRange(athlete.Attempts
+                    attempts.AddRange(entry.Attempts
                         .Select(a => Attempt
-                            .FromIntermediate(a, athlete.Id, res.Type)).ToArray());
+                            .FromIntermediate(a, entry.CompetitorId, res.Type)).ToArray());
                 }
                 res.Attempts = attempts.ToArray();
             }

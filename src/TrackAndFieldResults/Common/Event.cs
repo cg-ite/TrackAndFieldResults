@@ -99,8 +99,8 @@ namespace TrackAndFieldResults.Common
                     .ThenBy(a => a.PositionResult)
                     .ThenBy(a => a.PositionStart)
                     .Reverse().DistinctBy(a => a.AthleteId).Take(8).Reverse();
-
-            for (var i = 0; i < AttemptSeparators[1] - AttemptSeparators[0]; i++)
+            // 3 bei seltec; 3,5 bei Omega
+            for (var i = 0; i < AttemptSeparators[0]; i++)
             {
                 foreach (var p in endkampfPosition)
                 {
@@ -110,19 +110,22 @@ namespace TrackAndFieldResults.Common
                         a.AthleteId == p.AthleteId));
                 }
             }
-
-            var finale = keys.Where(a => a.PositionResult <= AttemptSeparators[1])
-                    .OrderBy(a => a.Result)
-                    .ThenBy(a => a.PositionResult)
-                    .ThenBy(a => a.PositionStart)
-                    .Reverse().DistinctBy(a => a.AthleteId).Take(8).Reverse();
-
-            foreach (var p in finale)
+            // bei Omega letzter Versuch
+            if (AttemptSeparators.Length == 2)
             {
-                // sollte nur ein Versuch sein; kann aber auch leer sein, falls verletzt
-                res.AddRange(doneAttempts
-                    .Where(a => a.Number == AttemptSeparators[1] + 1 &&
-                    a.AthleteId == p.AthleteId));
+                var finale = keys.Where(a => a.PositionResult <= AttemptSeparators[1])
+                        .OrderBy(a => a.Result)
+                        .ThenBy(a => a.PositionResult)
+                        .ThenBy(a => a.PositionStart)
+                        .Reverse().DistinctBy(a => a.AthleteId).Take(8).Reverse();
+
+                foreach (var p in finale)
+                {
+                    // sollte nur ein Versuch sein; kann aber auch leer sein, falls verletzt
+                    res.AddRange(doneAttempts
+                        .Where(a => a.Number == AttemptSeparators[1] + 1 &&
+                        a.AthleteId == p.AthleteId));
+                }
             }
             return res.ToArray();
         }
@@ -158,7 +161,7 @@ namespace TrackAndFieldResults.Common
         public Athlete[] Athletes { get; set; }
         public override string ToString()
         {
-            return $"{Name} - {Agegroups.First().Shortcode} {Unit}";
+            return base.ToString();
         }
 
         /// <summary>
@@ -335,6 +338,13 @@ namespace TrackAndFieldResults.Common
             return evt;
         }
 
+        /// <summary>
+        /// Erstellte ein Event mit allen Entries, die vorher
+        /// sortiert werden.
+        /// </summary>
+        /// <param name="eventDetails"></param>
+        /// <param name="entry"></param>
+        /// <returns></returns>
         public static Event FromEventDetails(AthonEvent eventDetails, AthonEntry entry)
         {
             var evt = new Event()
@@ -345,7 +355,7 @@ namespace TrackAndFieldResults.Common
                 Phase = entry.RoundType.ToString(),
                 Name = eventDetails.Longname,
                 Type = FromShortcode(eventDetails.Shortcode),
-                Startorders = GetStarlist(eventDetails.Entries),
+                Startorders = GetStarlist(eventDetails.Entries.Where(e=> e.RoundType== entry.RoundType)),
                 AttemptSeparators = [3]     // Standard, Jugend-DM und Mehrkampf (da nur 3)
                 
             };
@@ -411,9 +421,28 @@ namespace TrackAndFieldResults.Common
             SortedDictionary<string, int>[] res = [new SortedDictionary<string, int>()];
             res[0] = new SortedDictionary<string, int>(entries
                             .Where(e => e.Lane != null || e.Lane == "")
-                            .Select(sl => new { i = Convert.ToInt32(sl.Lane), Key = sl.CompetitorId })
+                            .Select(sl => new { i = ConvertLane(sl.Lane) , Key = sl.CompetitorId })
                             .ToDictionary(p => p.Key, p => p.i));
             return res;
+        }
+
+        /// <summary>
+        /// Konvertiert die Bahnangabe von Seltec in eine
+        /// virtuelle Bahnangabe bei langen Läufen, die in
+        /// mehreren Athleten pro Bahn starten
+        /// </summary>
+        /// <param name="lane"></param>
+        /// <returns></returns>
+        private static int ConvertLane(string lane)
+        {
+            // Lane kann bei langen Läufen auch 1-8 -> 1. Reihe nr 8 oder bahn 1 nr 8
+            // umrechenen: - entfernen und 10 abziehen
+            if (lane.Contains("-"))
+            {
+                return Convert.ToInt32(lane.Replace("-", "")) - 10;
+            }
+            if (int.TryParse(lane, out int result)) return result;
+            return 0;
         }
     }
 

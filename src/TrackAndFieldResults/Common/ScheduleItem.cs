@@ -29,7 +29,12 @@ namespace TrackAndFieldResults.Common
 
         public override string ToString()
         {
-            return $"{Longname} - {Agegroups.First().Shortcode}";
+            return $"{Longname} - {AgeGroupsToString()}";
+        }
+
+        private string AgeGroupsToString()
+        {
+            return String.Join(", ", Agegroups.Select(a => a.Shortcode));
         }
 
         public static ScheduleItem FromEventDetails(IEventDetails evt, string language = "de")

@@ -43,7 +43,7 @@ namespace TrackAndFieldResults.Common
         /// <summary>
         /// Lastname
         /// </summary>
-        string Name { get; set; }
+        string Lastname { get; set; }
         /// <summary>
         /// 3 Letter IOC/ISO Code for Nation. E.g. GER 
         /// </summary>

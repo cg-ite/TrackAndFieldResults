@@ -20,13 +20,13 @@ namespace TrackAndFieldResults.Common
         public int? YoB { get ; set ; }
         public string Firstname { get ; set ; }
         public Gender Gender { get ; set ; }
-        public string Name { get ; set ; }
+        public string Lastname { get ; set ; }
         public string Nationality { get ; set ; }
         public string Club { get ; set ; }
 
         public override string ToString()
         {
-            return $"{System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Name.ToLower())}, {Firstname}";
+            return $"{Lastname}, {Firstname}";
         }
 
         public static Athlete FromAthlete(Omega.Athlete athlete)
@@ -37,7 +37,7 @@ namespace TrackAndFieldResults.Common
                 WorldathleticsId = athlete.FedCode,
                 Bib = athlete.Bib,
                 Firstname = athlete.FirstName,
-                Name = athlete.Name,
+                Lastname = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(athlete.Name.ToLower()),
                 Gender = athlete.Gender == "M" ? Common.Gender.Male : Common.Gender.Female,
                 YoB = athlete.Age.ToYoB(),
                 Nationality = athlete.Nationality,
@@ -52,7 +52,7 @@ namespace TrackAndFieldResults.Common
                 WorldathleticsId = athlete._WA_Id,
                 Bib = athlete.Bib,
                 Firstname = athlete.Firstname,
-                Name = athlete.Name,
+                Lastname = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(athlete.Name.ToLower()),
                 Gender = (Gender)athlete.Gender,
                 YoB = athlete.YoB,
                 Nationality = athlete.Nation,
