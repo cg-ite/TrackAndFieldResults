@@ -19,6 +19,7 @@ namespace TrackAndFieldResults.Common
         public int? Height { get ; set ; }
         public int? Weight { get ; set ; }
         public int? Distance { get ; set ; }
+        public string ProviderId { get; set; }
     }
 
     // macht so keinen Sinn, da height, weight, ... bei seltec immer
@@ -75,6 +76,12 @@ namespace TrackAndFieldResults.Common
                 Shortcode = "MU23",
                 FromAge = 20, ToAge = 22,
             },
+            new Agegroup() {Id = 8,
+                Longname = "Männer & Frauen",
+                Gender = Gender.Mixed,
+                Shortcode = "X",
+                FromAge = 20, ToAge = 29,
+            },
             new Agegroup() {Id = 7,
                 Longname = "Männer",
                 Gender = Gender.Male,
@@ -82,10 +89,13 @@ namespace TrackAndFieldResults.Common
                 FromAge = 23, ToAge = 29,
             }
             };
-        public static Agegroup? First(string shortcode)
+        public static Agegroup? First(string shortcode, string providerId)
         {
             if (shortcode == null) { return null; } 
-            return all.FirstOrDefault(all => all.Shortcode == shortcode);
+            var ag =  all.FirstOrDefault(all => all.Shortcode == shortcode);
+            if (ag == null) { return null; };
+            ag.ProviderId = providerId;
+            return ag;
         }
     }
 }
