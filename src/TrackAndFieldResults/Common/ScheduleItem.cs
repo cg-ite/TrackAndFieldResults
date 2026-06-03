@@ -34,23 +34,29 @@ namespace TrackAndFieldResults.Common
 
         private string AgeGroupsToString()
         {
-            return String.Join(", ", Agegroups.Select(a => a.Shortcode));
+            return string.Join(", ", Agegroups.Select(a => a.Shortcode));
         }
 
         public static ScheduleItem FromEventDetails(IEventDetails evt, string language = "de")
         {
             return (ScheduleItem)Event.FromEventDetails(evt, language);
         }
-        public static ScheduleItem[] FromEventDetails(AthonEvent eventDetails)
+        public static ScheduleItem[] FromEventDetails(AthonEvent eventDetails, DateTime compDate)
         {
             // evt hat in entries alle phasen in einem Array
-            var heats = eventDetails.Entries.Where(e=> e.Heat != null).GroupBy(e => new { e.RoundType, e.Heat }, evt => evt)
+            var entries = eventDetails.Entries;
+            if(eventDetails.Entries.Any(e=>e.State == AthonEntryState.Finished)){
+                // wahrscheinlich wettkampf abgeschlossen
+                // nur gültige Entries, damit keine leeren Heats entstehen
+                // => Disziplinen ohne Teilnehmer aussoriteren
+                entries = entries.Where(e => e.State == AthonEntryState.Finished).ToList();
+            }
+            var heats = entries//
+                .GroupBy(e => new { e.RoundType, e.Heat }, evt => evt)
                 .OrderBy(ev => ev.Key.Heat)
                 .OrderBy(ev => ev.Key.RoundType);
-            return heats.Select(e => (ScheduleItem)Event.FromEventDetails(eventDetails, e.First())).ToArray();
+            return heats.Select(e => (ScheduleItem)Event.FromEventDetails(eventDetails, e.First(), compDate)).ToArray();
         }
-
-
     }
 
 
@@ -81,6 +87,10 @@ namespace TrackAndFieldResults.Common
 
     }
 
+    /// <summary>
+    /// Disziplintyp
+    /// </summary>
+    /// <remarks>Omega hat auch MEDAL</remarks>
     public enum Type
     {
         Height,

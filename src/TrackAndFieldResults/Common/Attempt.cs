@@ -4,6 +4,7 @@
  * code was sent as patch, no public git repo available
  */
 using System.Globalization;
+using System.Numerics;
 using TrackAndFieldResults.Common;
 using TrackAndFieldResults.Omega;
 using TrackAndFieldResults.Seltec;
@@ -117,7 +118,15 @@ namespace TrackAndFieldResults.Common
             }
         }
 
+        /// <summary>
+        /// Übersprungene Höhe bei Stab- oder Hochsprung
+        /// </summary>
         public decimal? Height { get; internal set; }
+
+        public override string ToString()
+        {
+            return $"{AthleteId}: {FormattedResult()} {(Wind.HasValue ? "("+Wind.Value+")":"")} B:{(IsBest.Value ? "✔️":"✖️")}";
+        }
 
         public static Attempt FromIntermediate(Intermediate intermediate, string athleteId,
             Type type)

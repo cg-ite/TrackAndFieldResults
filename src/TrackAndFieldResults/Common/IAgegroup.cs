@@ -7,7 +7,6 @@ namespace TrackAndFieldResults.Common
 {
     public interface IAgegroup
     {
-        /// <summary>ID inside Document or Database</summary>
         long Id { get; set; }
         /// <summary>Freetext name of Event, in local language</summary>
         string Longname { get; set; }
@@ -31,5 +30,8 @@ namespace TrackAndFieldResults.Common
 
         /// <summary>Distance between Hurdles in Centimeters (cm) for this agegroup inside this event</summary>
         int? Distance { get; set; }
+
+        /// <summary>ID inside Document or Database</summary>
+        string ProviderId { get; set; }
     }
 }

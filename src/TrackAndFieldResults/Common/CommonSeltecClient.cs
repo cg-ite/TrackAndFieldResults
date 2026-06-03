@@ -21,7 +21,7 @@ namespace TrackAndFieldResults.Common
         {
             //caching
             AthonCompetition _competition;
-            string respose ="";
+            string respose = "";
             if (_competitions.ContainsKey(competitionKey))
             {
                 _competition = _competitions[competitionKey];
@@ -31,8 +31,10 @@ namespace TrackAndFieldResults.Common
                 var details = await _client.GetLegacyCompetitionByIdAsync(competitionKey);
                 _competition = details.Competitions.First();
                 _competitions.Add(competitionKey, _competition);
+#if DEBUG
                 respose = _client.ResponseText;
                 _client.SaveResponseText($"./{competitionKey}.json");
+#endif
             }
             var res = new Competition()
             {
@@ -45,7 +47,8 @@ namespace TrackAndFieldResults.Common
                 ResultProviderId = ProviderId.Seltec,
                 ResponseText = respose,
             };
-            res.Schedule = _competition.Events.SelectMany(e => ScheduleItem.FromEventDetails(e)).ToArray();
+            //TODO: Auf End date prüfen
+            res.Schedule = _competition.Events.SelectMany(e => ScheduleItem.FromEventDetails(e, _competition.Start.Date)).ToArray();
             return res;
         }
 
@@ -59,11 +62,12 @@ namespace TrackAndFieldResults.Common
             if (year < 2010)
             {
                 throw new ArgumentOutOfRangeException(nameof(year), $"Das Jahr {year} ist zu klein, bitte übergeben Sie ein größeres Jahr.");
-            } 
+            }
 
             var comps = await _client.GetCompetitionsAsync(year);
-                        
-            return comps.Select((c,i) => new Competition() {
+
+            return comps.Select((c, i) => new Competition()
+            {
                 ProviderId = c.ID,
                 ResultProviderId = ProviderId.Seltec,
                 Name = c.Name,
@@ -83,42 +87,64 @@ namespace TrackAndFieldResults.Common
             {
                 await GetCompetitionDetailsAsync(competitionKey);
             }
-            var parts = eventKey.Split('-');
             var _competition = _competitions[competitionKey];
-            var evt = _competition.Events.Where(e=> e.Id == parts[0]).First();
+            var evtKey = EventKey.FromString(eventKey);
+
+            IEnumerable<AthonEvent> actEvent = _competition.Events.Where(e => e.Id == evtKey.EventId);
+            var evt = actEvent.First();
             if (evt == null) { throw new ArgumentOutOfRangeException(nameof(evt), $"Der Eventkey '{eventKey}' ist nicht vorhanden."); }
 
-            var entries = evt.Entries.Where(e => e.RoundType == Enum.Parse<AthonRoundType>(parts[1])
-                && e.Heat == parts[2]);
+            var entries = evt.Entries.Where(e => e.RoundType == Enum.Parse<AthonRoundType>(evtKey.RoundId)
+                && e.Heat == evtKey.HeatId);
 
-            var res = Event.FromEventDetails(evt, entries.First());
-            res.Athletes = GetAthletesByIds(competitionKey, entries.Select(e => e.CompetitorId)).ToArray();
-
-            var results = new List<Attempt>();
-            foreach (var entry in entries)
+            AthonEntry firstEntry = new();
+            if (entries.Count() == 0)
             {
-                results.AddRange(entry.Attempts.Where(a => a.IsBest.HasValue && a.IsBest.Value)
-                    .Select(a => Attempt
-                        .FromIntermediate(a, entry.CompetitorId, res.Type)).ToArray());
-            }
-            res.Results = results.ToArray();
-
-            if (res.Type == Type.Run) 
-            {
-                
+                // bei geplanten Wettkämpfen gibt es keine Entries
+                firstEntry.RoundType = Enum.Parse<AthonRoundType>(evtKey.RoundId);
+                firstEntry.Heat = evtKey.HeatId;
+                firstEntry.HeatDateTime = _competition.Start.Date;
             }
             else
             {
-                var attempts = new List<Attempt>();
+                firstEntry = entries.First();
+            }
+
+            var res = Event.FromEventDetails(evt, firstEntry, _competition.Start.Date);
+            res.Athletes = GetAthletesByIds(competitionKey, entries.Select(e => e.CompetitorId)).ToArray();
+
+            res.Entries = entries.Select(e => Entry.FromEntry(e, res.Type)).ToArray();
+            res.Results = res.Entries
+                .Where(e => e.State != EntryState.None)
+                .SelectMany(e => e.Attempts
+                    .Where(a => a.Status != AttemptStatus.Unknown && 
+                            a.IsBest.HasValue && a.IsBest.Value)).ToArray();
+            
+            if (res.Type == Type.Run)
+            {
+                // TODO?
+            }
+            else
+            {
+                /*var attempts = new List<Attempt>();
                 foreach (var entry in entries)
                 {
+                    // bei geplanten events wird ein leeres Attempts-Objekt übergeben
+                    // deswegen Prüfung auf Status != None, weil sonst
+                    // das leere Objekt als Attempt geparst wird
+                    if (entry.State == AthonEntryState.None) { continue; }
                     attempts.AddRange(entry.Attempts
                         .Select(a => Attempt
                             .FromIntermediate(a, entry.CompetitorId, res.Type)).ToArray());
-                }
-                res.Attempts = attempts.ToArray();
+                }*/
+                res.Attempts = res.Entries
+                    .Where(e => e.State != EntryState.None)
+                    .SelectMany(e => e.Attempts
+                        .Where(a => a.Status != AttemptStatus.Unknown)).ToArray();
+                //res.Attempts = attempts.ToArray();
             }
             return res;
+
         }
 
 
@@ -137,10 +163,51 @@ namespace TrackAndFieldResults.Common
             // alle Athleten
             var _competition = _competitions[competitionKey];
             var allAthletes = _competition.Clubs.SelectMany(c => c.Competitors,
-                (c,a) => Athlete.FromAthlete(a, c));
+                (c, a) => Athlete.FromAthlete(a, c));
             var athletIds = ids;
-            return  allAthletes.Join(athletIds, at => at.Id, id => id,
+            return allAthletes.Join(athletIds, at => at.Id, id => id,
                 (ath, id) => ath);
         }
+
     }
+    /// <summary>
+    /// Klasse für den künstlichen EventKey einer Phase 
+    /// einer Disziplin, wie bei Omega.
+    /// Format: EventId*RoundId*HeatId
+    /// </summary>
+    /// <remarks>Notwendig um einen einzelnen Lauf auszuwählen</remarks>
+    public class EventKey
+    {
+        private const char Sep = '*';
+
+        public static EventKey FromString(string id)
+        {
+            var parts = id.Split(Sep);
+            if (parts.Length == 2)
+            {
+                return new EventKey
+                {
+                    EventId = parts[0],
+                    RoundId = parts[1],
+                };
+                throw new ArgumentException($"Der übergebene Key{id} hat kein gültiges Format");
+            }
+            return new EventKey
+            {
+                EventId = parts[0],
+                RoundId = parts[1],
+                HeatId = parts[2],
+            };
+        }
+
+        public static string ToEventKey(string eventId, string roundId, string heatId)
+        {
+            return $"{eventId}{Sep}{roundId}{Sep}{heatId}";
+        }
+
+        public string EventId { get; set; }
+        public string RoundId { get; set; }
+        public string HeatId { get; set; }
+    }
+
 }

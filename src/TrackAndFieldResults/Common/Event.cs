@@ -4,6 +4,7 @@
  * code was sent as patch, no public git repo available
  */
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Globalization;
 using TrackAndFieldResults.Omega;
 using TrackAndFieldResults.Seltec;
@@ -33,6 +34,17 @@ namespace TrackAndFieldResults.Common
             get
             {
                 var now = DateTime.Now;
+                // enddate scheint bei Seltec nicht verläßlich zu sein
+                // deswegen Standard-WK-Länge annehmen
+                if (StartDate.HasValue && EndDate.HasValue == false) {
+                    if (Type == Type.Width)
+                    {EndDate = StartDate.Value.AddHours(1.2);}
+                    if (Type == Type.Height)
+                    {EndDate = StartDate.Value.AddHours(2);}
+                    if (Type == Type.Run)
+                    {EndDate = StartDate.Value.AddHours(2);}
+                }
+
                 if (StartDate.HasValue == false && EndDate.HasValue == false)
                 { return EventStatus.Unknown; }
                 if (StartDate.Value > now)
@@ -72,11 +84,18 @@ namespace TrackAndFieldResults.Common
                 return Attempts;
             }
 
+            // bei mehreren Agegroups wird innerhalb der Agegroup
+            // sortiert und dann nach aufsteigender Agegroup
+            // gesetzt. Zumindestend bei Seltec, bei den
+            // anderen Anbietern gibt es das nicht?
+            // Omega Ratingen schauen?
             Startorders= startorders;
+            var validEntries = Entries.Where(e => e.State == EntryState.Finished).ToList();
+            var keys = GetWidthKeys2(this, startorders, Agegroups.ToArray());
             // nur durchgeführte Ergebnisse
             Attempt[] doneAttempts = Attempts.Where(a => a.Status == AttemptStatus.Valid || a.Status == AttemptStatus.Invalid)
                 .ToArray();
-            var keys = GetWidthKeys(doneAttempts, startorders);
+            var keys3 = GetWidthKeys(doneAttempts, startorders);
             
             var res = new List<Attempt>();
             // MK ohne umsortieren
@@ -94,11 +113,19 @@ namespace TrackAndFieldResults.Common
                     .ThenBy(a => GetInitialStartposition(startorders, a.AthleteId));
             res.AddRange(sorted); // Vorkampf
 
-            var endkampfPosition = keys.Where(a => a.PositionResult <= AttemptSeparators[0])
-                    .OrderBy(a => a.Result)
-                    .ThenBy(a => a.PositionResult)
-                    .ThenBy(a => a.PositionStart)
-                    .Reverse().DistinctBy(a => a.AthleteId).Take(8).Reverse();
+            List<WidthSortKey> endkampfPosition = new();
+            // Bei mehreren Aks in einem Wettkampf kommen immer
+            // 8 aus jeder Ak weiter. Dann wird nach Alter der
+            // Ak aufsteigend sortiert: jüngste zuerst
+            foreach (var ag in Agegroups.OrderBy(ag=> ag.Id))
+            {
+                endkampfPosition.AddRange( keys
+                    .Where(a => a.PositionResult <= AttemptSeparators[0] && a.AgeGroupId == ag.Id)
+                        .OrderBy(a => a.Result)
+                        .ThenBy(a => a.PositionResult)
+                        .ThenBy(a => a.PositionStart)
+                        .Reverse().DistinctBy(a => a.AthleteId).Take(8).Reverse());
+            }
             // 3 bei seltec; 3,5 bei Omega
             for (var i = 0; i < AttemptSeparators[0]; i++)
             {
@@ -148,8 +175,31 @@ namespace TrackAndFieldResults.Common
             return widthkeys.ToArray();
         }
 
+        public WidthSortKey[] GetWidthKeys2(Event evt,
+            SortedDictionary<string, int>[] startorders, IAgegroup[] agegroups)
+        {
+            //Result wird hier null, ist aber richtig bei ungültigen sprüngen
+            var widthkeys = evt.Entries.SelectMany(e => e.Attempts.Select(a =>
+                new WidthSortKey(
+                    a.Result, 
+                    GetInitialStartposition(startorders, a.AthleteId),
+                    a.Number.Value, a.AthleteId,
+                    GetAgeGroupSortId(e.AgegroupId))));
+            return widthkeys.ToArray();
+        }
+
+        private long GetAgeGroupSortId(string ageGroupId)
+        {
+            var ag = Agegroups.Where(a => a.ProviderId == ageGroupId).First();
+            if (ag != null)
+            {
+                return ag.Id;
+            }
+            return 0;
+        }
+
         /// <summary>
-        /// All attempts of a field competition, auch verzichtetet oder abgemeeldete 
+        /// All attempts of a field competition, auch verzichtetet oder abgemeldete 
         /// Versuche. Keine Versuche bei Läufen, diese Ergebnisse sind in Results
         /// </summary>
         public Attempt[] Attempts { get; set; }
@@ -159,6 +209,7 @@ namespace TrackAndFieldResults.Common
         /// </summary>
         public Attempt[] Results { get; set; }
         public Athlete[] Athletes { get; set; }
+        public Entry[] Entries { get; set; }
         public override string ToString()
         {
             return base.ToString();
@@ -204,8 +255,8 @@ namespace TrackAndFieldResults.Common
                 StartDate = eventDetails.StartTime.ToDateTime(),
                 EndDate = eventDetails.EndTime.ToDateTime(),
                 Agegroups = eventDetails.Rsc.Gender.ToUpper() == "W" ?
-                    [GerAgegroups.First("W")] :
-                    [GerAgegroups.First("M")],
+                    [GerAgegroups.First("W", eventDetails.Rsc.Gender)] :
+                    [GerAgegroups.First("M", eventDetails.Rsc.Gender)],
                 ProviderId = eventDetails.Rsc.ValueUnit,
                 Unit = unitName,
                 Phase = phaseName,
@@ -345,13 +396,17 @@ namespace TrackAndFieldResults.Common
         /// <param name="eventDetails"></param>
         /// <param name="entry"></param>
         /// <returns></returns>
-        public static Event FromEventDetails(AthonEvent eventDetails, AthonEntry entry)
+        public static Event FromEventDetails(AthonEvent eventDetails, AthonEntry entry, DateTime compDate)
         {
+            // TODO: testen ob rounddate immer gesetz ist
+            var evtDate = entry.HeatDateTime.HasValue ? entry.HeatDateTime.Value.DateTime : compDate;
+            evtDate = entry.RoundDateTime.HasValue ? entry.RoundDateTime.Value.DateTime : compDate;
+            //entry.State
             var evt = new Event()
             {
-                Agegroups = eventDetails.Agegroups.Select(a => GerAgegroups.First(a.Shortcode)).ToArray(),
-                StartDate = entry.HeatDateTime.Value.Date,
-                ProviderId = $"{eventDetails.Id}-{entry.RoundType}-{entry.Heat}",
+                Agegroups = eventDetails.Agegroups.Select(a => GerAgegroups.First(a.Shortcode, a.Id)).ToArray(),
+                StartDate = evtDate,
+                ProviderId = EventKey.ToEventKey(eventDetails.Id, entry.RoundType.ToString(),entry.Heat),
                 Phase = entry.RoundType.ToString(),
                 Name = eventDetails.Longname,
                 Type = FromShortcode(eventDetails.Shortcode),
@@ -448,12 +503,14 @@ namespace TrackAndFieldResults.Common
 
     public class WidthSortKey
     {
-        public WidthSortKey(decimal? Result, int PositionStart, int PositionResult, string AthleteId)
+        public WidthSortKey(decimal? Result, int PositionStart, int PositionResult, 
+            string AthleteId, long Agegroupid = 0)
         {
             this.Result = Result.HasValue ? Result.Value : 0;
             this.PositionStart = PositionStart;
             this.PositionResult = PositionResult;
             this.AthleteId = AthleteId;
+            this.AgeGroupId = Agegroupid;
             this.Positions.Add(PositionStart);
         }
 
@@ -461,6 +518,7 @@ namespace TrackAndFieldResults.Common
         public int PositionStart { get; }
         public int PositionResult { get; }
         public string AthleteId { get; }
+        public long AgeGroupId { get; }
 
         public List<int> Positions = new List<int>();
     }

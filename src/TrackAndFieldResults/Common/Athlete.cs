@@ -48,7 +48,7 @@ namespace TrackAndFieldResults.Common
         {
             return new Athlete
             {
-                Id= athlete.Id,
+                Id = athlete.Id,
                 WorldathleticsId = athlete._WA_Id,
                 Bib = athlete.Bib,
                 Firstname = athlete.Firstname,
