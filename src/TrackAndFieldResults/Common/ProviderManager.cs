@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using TrackAndFieldResults.Omega;
 
 namespace TrackAndFieldResults.Common
 {
     /// <summary>
-    /// Common API 
+    /// Manages the provider with cached http-clients
     /// </summary>
     public class ProviderManager
     {
@@ -83,9 +80,10 @@ namespace TrackAndFieldResults.Common
             switch (id)
             {
                 case ProviderId.Omega:
+                    var version = new Random(2783763).Next(90, 140);
                     client.BaseAddress =
                         new Uri("https://ps-cache.web.swisstiming.com");
-                    client.DefaultRequestHeaders.Add("User-Agent", "ResultLib/1.0");
+                    client.DefaultRequestHeaders.Add("User-Agent", $"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/{version}.0");
                     break;
 
                 case ProviderId.Seltec:
@@ -101,5 +99,35 @@ namespace TrackAndFieldResults.Common
 
             return client;
         }
+
+        /*public void SetSettings(ProviderSettings settings)
+        {
+            var http = new HttpClient();
+            http.DefaultRequestHeaders.Add("ApiKey", settings.SeltecApiToken);
+            SeltecClient = new CommonSeltecClient(http);
+            SeltecClient.BaseUrl = settings.SeltecBaseUrl;
+
+            HttpClient httpClient = new();
+            httpClient.DefaultRequestHeaders.Add("Accept", "text/json");
+            var version = new Random(2783763).Next(90, 135);
+            httpClient.DefaultRequestHeaders.Add("User-Agent",
+                $"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/{version}.0");
+
+            OmegaClient = new CommonOmegaClient(httpClient);
+            OmegaClient.BaseUrl = settings.OmegaBaseUrl;
+        }*/
+
+    }
+
+    /// <summary>
+    /// Konnektor-Settings für alle DataSources.
+    /// Kann dann als json-schema zurückgegeben werden,
+    /// damit daraus automatisch Forms generiert werden können
+    /// </summary>
+    public class ProviderSettings
+    {
+        public string OmegaBaseUrl { get; set; }
+        public string SeltecBaseUrl { get; set; }
+        public string SeltecApiToken { get; set; }
     }
 }
