@@ -4,6 +4,7 @@
  * code was sent as patch, no public git repo available
  */
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.Globalization;
 using TrackAndFieldResults.Omega;
@@ -45,13 +46,16 @@ namespace TrackAndFieldResults.Common
                     {EndDate = StartDate.Value.AddHours(2);}
                 }
 
+                if (StartDate.HasValue == false)
+                { return EventStatus.Unknown; }
                 if (StartDate.HasValue == false && EndDate.HasValue == false)
                 { return EventStatus.Unknown; }
+
                 if (StartDate.Value > now)
                 { return EventStatus.Pending; }
-                if (StartDate.Value < now && EndDate.Value > now)
+                if (StartDate.Value < now && EndDate.HasValue == false)
                 { return EventStatus.Started; }
-                if (EndDate.Value < now)
+                if (EndDate.HasValue && EndDate.Value < now)
                 { return EventStatus.Finished; }
                 return EventStatus.Unknown;
             }
@@ -190,10 +194,10 @@ namespace TrackAndFieldResults.Common
 
         private long GetAgeGroupSortId(string ageGroupId)
         {
-            var ag = Agegroups.Where(a => a.ProviderId == ageGroupId).First();
-            if (ag != null)
+            var ag = Agegroups.Where(a => a.ProviderId == ageGroupId);
+            if (ag.Count() > 0)
             {
-                return ag.Id;
+                return ag.First().Id;
             }
             return 0;
         }

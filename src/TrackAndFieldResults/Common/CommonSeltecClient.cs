@@ -120,12 +120,6 @@ namespace TrackAndFieldResults.Common
                     .Where(a => a.Status != AttemptStatus.Unknown && 
                             a.IsBest.HasValue && a.IsBest.Value)).ToArray();
             
-            if (res.Type == Type.Run)
-            {
-                // TODO?
-            }
-            else
-            {
                 /*var attempts = new List<Attempt>();
                 foreach (var entry in entries)
                 {
@@ -141,8 +135,7 @@ namespace TrackAndFieldResults.Common
                     .Where(e => e.State != EntryState.None)
                     .SelectMany(e => e.Attempts
                         .Where(a => a.Status != AttemptStatus.Unknown)).ToArray();
-                //res.Attempts = attempts.ToArray();
-            }
+                
             return res;
 
         }

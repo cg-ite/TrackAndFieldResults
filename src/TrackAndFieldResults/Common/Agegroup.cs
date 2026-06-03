@@ -87,7 +87,19 @@ namespace TrackAndFieldResults.Common
                 Gender = Gender.Male,
                 Shortcode = "M",
                 FromAge = 23, ToAge = 29,
-            }
+            },
+            new Agegroup() {Id = 9,
+                Longname = "männliche Jugend M15",
+                Gender = Gender.Male,
+                Shortcode = "M15",
+                FromAge = 15, ToAge = 15,
+            },
+            new Agegroup() {Id = 10,
+                Longname = "weibliche Jugend W15",
+                Gender = Gender.Female,
+                Shortcode = "W15",
+                FromAge = 15, ToAge = 15,
+            },
             };
         public static Agegroup? First(string shortcode, string providerId)
         {
