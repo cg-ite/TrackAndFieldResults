@@ -128,7 +128,8 @@ namespace TrackAndFieldResults.Common
                 res.EndDate = DateTime.Parse(s.ListDay.Last());
 
                 var eventGrps = s.Units.Values
-                .OrderBy(u => u.Rsc.ValuePhase);
+                    .Where(u => u.Stats.Type?.ToUpper() != "MEDAL")  
+                    .OrderBy(u => u.Rsc.ValuePhase);
                 //.GroupBy(u => u.Rsc.ValuePhase);
                 var events = eventGrps.Select(g => ScheduleItem.FromEventDetails(g))
                     .OrderBy(e => e.Name)
