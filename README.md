@@ -21,6 +21,13 @@ Worldathletics bieten den Zugriff Athletenzentriert auf die Daten der internatio
 - Liste der Progression in den Disziplinen
 - Liste der Wettkampf-Ergebnisse
 
+## TODO
+- [ ] Phase vereinheitlichen: Vorläufe, Halbfinale, ABFinale, ...
+- [ ] Rawdata oder wie mit Backup der Calls erstellen?
+- [ ] Tests mit geplanten Wettkämpfen, ebi denen noch nicht alle Infos eingetragen sind
+- wie mit den vielen Null-checks umgehen?
+
+
 ## Philosopie
 Die einzelnen Clients werden in Anlehung an NSwag generierten Code gestaltet, da Seltec eine swagger Schnittstelle
 bietet. So sind alle Clients im API gleich. Allerdings ist zu beachten, dass Seltec alle Daten zu einem Wettkampf

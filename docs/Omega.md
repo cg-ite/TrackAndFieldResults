@@ -24,8 +24,11 @@
   trotzdem eine Startreihenfolge (Aufstellung an Linie) gesetzt
 - In stats steht auch der milisekunden Anteil der Leistung bei Läufen
 - AttemptSeperators sind standardmäßig [3,5]
+
 ## Fragen zur Implementation
 - Startlist index bei 1 oder 0 beginnen?
 - Wie mit Läufen umgehen, da ja immer eigene Datei? Gesamtübersicht erstellen?
   Startlist mit mehreren 1. Pos?
 - gibt es abfinale als phase?
+- gibt es einen Event Status? Started, Finished?
+- gibt es überhaupt agegroups?

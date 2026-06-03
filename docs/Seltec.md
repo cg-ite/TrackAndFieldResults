@@ -16,4 +16,21 @@ Alle Daten zu einem Wettkampf sind in einem File/Abruf enthalten
   durchgeführt hat.
 - AttemptSeperators gibt es nicht und werden deshalb auf [3] gesetzt, da bei Seltec 
   nur nach dem 3ten versuch sortiert wird
+-  bei mehreren Agegroups wird innerhalb der Agegroup
+  sortiert und dann nach aufsteigender Agegroup
+  gesetzt. Zumindestend bei Seltec, bei den
+  anderen Anbietern gibt es das nicht?
+  Omega Ratingen schauen?
+            
 ## Fragen zur Implementation
+- entry muss eingebaut werden, damit klar wird, in welcher Agegroup ein Athlet
+  startet. Denn ein Athlet kann auch hochmelden. Der Entry verbindet diese
+  Infos. Bei Omega oder WA wird das nicht vorkommen, da die Felder immer
+  AgeGroup rein sein werden.
+  Dann kann der SortKey auch die Agegroup berücksichtigen und die Sortierung
+  anpassen.
+- Wie die internen Ids behandeln? AgeGroupId behalten, damit Abfrage klappt
+## Tests
+- bei geplanten Events ist rounddate angegeben nicht heatdate. ist rounddate
+  verlässlicher und immer gesetzt?
+- wird enddate der Veranstaltung immer gesetzt?
