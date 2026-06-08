@@ -3,13 +3,13 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-	  <AssemblyVersion>1.1.1</AssemblyVersion>
-	  <FileVersion>1.1.1</FileVersion>
+	  <AssemblyVersion>1.2.0</AssemblyVersion>
+	  <FileVersion>1.2.0</FileVersion>
 	  <Nullable>enable</Nullable>
 	  <PackageId>TrackAndFieldResults</PackageId>
 	  <Title>TrackAndField-Results</Title>
 	  <Description>Unified API for querying track and field results from different competition and athlete-centric data providers.</Description>
-	  <Version>1.1.0</Version>
+	  <Version>1.2.0</Version>
 	  <Copyright>Christian Günther</Copyright>
 	  <Authors>Christian Günther</Authors>
 	  <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
