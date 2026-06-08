@@ -265,7 +265,8 @@ namespace TrackAndFieldResults.Common
                 Unit = unitName,
                 Phase = phaseName,
                 Name = name,
-                Type = Enum.Parse<Type>(eventDetails.Stats.Type, true),
+                // Bei Medal ist Type leer
+                Type = eventDetails.Stats.Type == null ? Type.Medal : Enum.Parse<Type>(eventDetails.Stats.Type, true),
             };
 
             // Attempts 
@@ -456,6 +457,8 @@ namespace TrackAndFieldResults.Common
                 AthonShortcode.Running3000 => Type.Run,
                 AthonShortcode.Running5000 => Type.Run,
                 AthonShortcode.Running10000 => Type.Run,
+                AthonShortcode.SteepleChase2000 => Type.Run,
+                AthonShortcode.SteepleChase3000 => Type.Run,
                 AthonShortcode.Walking3000 => Type.Run,
                 AthonShortcode.Walking5000 => Type.Run,
                 AthonShortcode.Relay3x800 => Type.Relay,

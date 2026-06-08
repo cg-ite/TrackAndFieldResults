@@ -82,6 +82,9 @@ namespace TrackAndFieldResults.Seltec
         public const string Walking3000 = "3W";
         public const string Walking5000 = "5W";
 
+        public const string SteepleChase2000 = "2SC";
+        public const string SteepleChase3000 = "3SC";
+       
         public const string Relay4x100 = "4X1";
         public const string Relay4x200 = "4X2";
         public const string Relay4x400 = "4X4";

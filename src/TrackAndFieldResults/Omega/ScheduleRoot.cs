@@ -153,7 +153,7 @@ namespace TrackAndFieldResults.Omega
         public List<object> ListSession { get; set; }
     }
     /// <summary>
-    /// Intterface for the common properties of the two
+    /// Interface for the common properties of the two
     /// classes <see cref="EventSchedule"/> and 
     /// <see cref="EventDetails"/>
     /// </summary>

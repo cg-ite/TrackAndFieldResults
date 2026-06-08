@@ -186,14 +186,17 @@ namespace TrackAndFieldResults.Common
             {
                 throw new InvalidOperationException("Events of type 'Width' or 'Height' should copy best attempt from all attempts.");
             }
-
-            attempt.ResultRaw = athlete.Result;
-            // alles andere sind Weiten/Höhen m
-            // hier fehlt noch verzichtet, ungültig, disq
-            attempt.Result = TryParseString(attempt.ResultRaw);
-            attempt.Wind = TryParseString(windRaw);
-            attempt.Behind = TryParseString(athlete.Behind);
-
+            // keine Ahnung was mit dem Athleten ist.
+            // Aufgegeben? Nicht gestartet?
+            if (athlete.Result != null)
+            {
+                attempt.ResultRaw = athlete.Result;
+                // alles andere sind Weiten/Höhen m
+                // hier fehlt noch verzichtet, ungültig, disq
+                attempt.Result = TryParseString(attempt.ResultRaw);
+                attempt.Wind = TryParseString(windRaw);
+                attempt.Behind = TryParseString(athlete.Behind);
+            }
             return attempt;
         }
 

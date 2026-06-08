@@ -96,6 +96,7 @@ namespace TrackAndFieldResults.Common
         Height,
         Width, 
         Run,
-        Relay
+        Relay,
+        Medal
     }
 }
