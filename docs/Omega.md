@@ -23,7 +23,8 @@
 - Die Startlist bei Läufen enthält die Bahn des Laufes. Bei Läufen ohne Bahnen > 1500m ist 
   trotzdem eine Startreihenfolge (Aufstellung an Linie) gesetzt
 - In stats steht auch der milisekunden Anteil der Leistung bei Läufen
-- AttemptSeperators sind standardmäßig [3,5]
+- AttemptSeperators sind standardmäßig [3,5]; mal sehen wie es mit dem neuen System ist
+- Event ID: CompID dann nach _ATH kommt M/W, dann bis zu 8 chars der Shortcode; Bei DECATH oder HEPTATH dann 10 frei bzw Agegroup und dann 4 für Disziplin
 
 ## Fragen zur Implementation
 - Startlist index bei 1 oder 0 beginnen?
